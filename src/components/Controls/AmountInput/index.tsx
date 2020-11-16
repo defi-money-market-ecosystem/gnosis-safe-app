@@ -1,0 +1,116 @@
+import React from "react"
+import { BigNumberInput, BigNumberInputProps } from "big-number-input"
+import {
+  Box,
+  Input,
+  Link,
+  MenuItem,
+  Select,
+  styled,
+  Typography,
+} from "@material-ui/core"
+
+const TokenSelect = styled(Select)({
+  flexBasis: "100px",
+  height: "40px",
+  fontWeight: "lighter",
+  "&.MuiInput-root .MuiInput-input": {
+    padding: "10px 24px 10px 20px",
+    height: "100%",
+    boxSizing: "border-box",
+  },
+  "&$underline": {
+    border: "none",
+  },
+})
+
+const StyledInput = styled(Input)({
+  padding: "0 0 0 15px",
+  margin: "0 0 5px",
+  background: "#f6f8fb",
+  borderRadius: "4px",
+  "&$underline": {
+    border: "none",
+  },
+})
+
+const StyledTypography = styled(Typography)({
+  padding: "10px 20px",
+})
+
+const defaultTokens = ["ETH", "DAI"]
+
+export interface AmountInputProps extends BigNumberInputProps {
+  tokens?: Array<string>
+  selectedToken?: string
+  fixedToken?: boolean
+  onTokenChange?:
+    | ((
+        event: React.ChangeEvent<{
+          name?: string | undefined
+          value: unknown
+        }>,
+        child: React.ReactNode
+      ) => void)
+    | undefined
+  onMaxButtonClick?: (event: React.MouseEvent<any, MouseEvent>) => void
+}
+
+const AmountInput = (props: AmountInputProps) => {
+  const {
+    tokens = defaultTokens,
+    selectedToken: selectedTokenValue = "ETH",
+    fixedToken = false,
+    onTokenChange,
+    onMaxButtonClick,
+    ...inputProps
+  } = props
+
+  return (
+    <Box>
+      {!!onMaxButtonClick && (
+        <div>
+          <Link
+            variant="caption"
+            color="textPrimary"
+            style={{ float: "right" }}
+            underline="none"
+            onClick={onMaxButtonClick}
+            component="button"
+            type="button"
+          >
+            MAX
+          </Link>
+        </div>
+      )}
+      <BigNumberInput
+        {...inputProps}
+        renderInput={(props: React.HTMLProps<HTMLInputElement>) => (
+          <StyledInput
+            inputProps={props}
+            disableUnderline
+            endAdornment={
+              fixedToken ? (
+                <StyledTypography>{selectedTokenValue}</StyledTypography>
+              ) : (
+                <TokenSelect
+                  value={selectedTokenValue}
+                  onChange={onTokenChange}
+                  disableUnderline
+                >
+                  {tokens.map((token: string) => (
+                    <MenuItem value={token} key={token}>
+                      {token}
+                    </MenuItem>
+                  ))}
+                </TokenSelect>
+              )
+            }
+          />
+        )}
+      />
+    </Box>
+  )
+}
+
+export default AmountInput

@@ -40,10 +40,12 @@ const StyledTypography = styled(Typography)({
 
 const defaultTokens = ["ETH", "DAI"]
 
-export interface AmountInputProps extends BigNumberInputProps {
+export interface AmountInputProps
+  extends Omit<BigNumberInputProps, "onChange"> {
   tokens?: Array<string>
   selectedToken?: string
   fixedToken?: boolean
+  onChange?: (value: string) => void
   onTokenChange?:
     | ((
         event: React.ChangeEvent<{
@@ -63,6 +65,7 @@ const AmountInput = (props: AmountInputProps) => {
     fixedToken = false,
     onTokenChange,
     onMaxButtonClick,
+    onChange = () => {},
     ...inputProps
   } = props
 
@@ -84,6 +87,7 @@ const AmountInput = (props: AmountInputProps) => {
         </div>
       )}
       <BigNumberInput
+        onChange={onChange}
         {...inputProps}
         renderInput={(props: React.HTMLProps<HTMLInputElement>) => (
           <StyledInput

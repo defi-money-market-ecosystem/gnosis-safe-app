@@ -31,6 +31,13 @@ export const TOKENS = {
   },
 };
 
+export interface TOKEN_DETAILS_TYPE {
+  symbol: string
+  label: string
+  iconUrl: string
+  decimals: number
+}
+
 export const TOKEN_DETAILS = {
   ETH: {
     symbol: 'ETH',

@@ -1,19 +1,18 @@
 import React, { useContext, useEffect, useState } from "react"
-import { Box, Button, styled, Typography, useTheme } from "@material-ui/core"
-import AmountInput from "components/controls/AmountInput"
-import ArrowForward from "@material-ui/icons/ArrowForward"
+import { Box, Button, styled, Typography } from "@material-ui/core"
 import { getTokenDetails } from "utils"
 import { Erc20Token } from "types"
 import { useWallet } from "use-wallet"
 import ERC20TokenService from "services/ERC20"
 import { useSafe } from "@rmeissner/safe-apps-react-sdk"
 import { ethers } from "ethers"
-import { M_TOKEN_MAP } from "consts"
+import { M_TOKEN_MAP, TOKEN_DETAILS } from "consts"
 import useAsyncMemo from "hooks/useAsyncMemo"
 import DmmContext from "DmmContext"
 import { map } from "lodash"
 import DmmTokenService from "services/DMMTokenService"
 import Big from "big.js"
+import Converter from "components/controls/Converter"
 
 const HelperText = styled(Typography)({
   textAlign: "center",
@@ -22,7 +21,6 @@ const HelperText = styled(Typography)({
 })
 
 const MintTab = () => {
-  const theme = useTheme()
   const wallet = useWallet()
   const safe = useSafe()
   const {
@@ -90,13 +88,7 @@ const MintTab = () => {
     [tokens?.[token]]
   )
 
-  const rightAmount =
-    exchangeRate !== "0"
-      ? new Big(amount || "0")
-          .times(`1e${tokens[token].decimals}`)
-          .div(exchangeRate as string)
-          .toFixed(0)
-      : "0"
+  const insufficientBalance = new Big(amount || 0).gt(balance as string)
 
   useEffect(() => {
     if (wallet.status === "disconnected") {
@@ -108,13 +100,13 @@ const MintTab = () => {
     e: React.ChangeEvent<{ name?: string | undefined; value: unknown }>
   ) => {
     e.preventDefault()
+    setAmount("")
     setToken(e.target.value as Erc20Token)
-    setAmount("0")
   }
 
-  const handleAmountChange = (value: string = "0") => setAmount(value)
+  const handleLeftAmountChange = (value: string = "0") => setAmount(value)
 
-  const handleMaxButtonClick = () => setAmount(balance as string)
+  const handleMaxButtonClick = () => setAmount((balance as string) || "0")
 
   return (
     <Box>
@@ -126,32 +118,24 @@ const MintTab = () => {
       >
         Mint your tokens into mTokens so it can earn interest.
       </HelperText>
-      <Box display="flex" alignItems="flex-end">
-        <AmountInput
-          tokens={map(tokens, "symbol")}
-          selectedToken={token}
-          decimals={tokenDetails?.decimals || 0}
-          value={amount}
-          onTokenChange={handleTokenChange}
-          onChange={handleAmountChange}
-          onMaxButtonClick={handleMaxButtonClick}
-        />
-        <ArrowForward
-          style={{ margin: "12px", color: theme.palette.text.primary }}
-          color="primary"
-        />
-        <AmountInput
-          selectedToken={mToken}
-          fixedToken
-          decimals={tokenDetails?.decimals || 0}
-          value={rightAmount}
-          onChange={(e: any) => {}}
-        />
-      </Box>
+      <Converter
+        tokens={map(tokens, "symbol")}
+        leftToken={tokenDetails || TOKEN_DETAILS.ETH}
+        rightToken={mToken}
+        leftValue={amount}
+        exchangeRate={exchangeRate as string}
+        onTokenChange={handleTokenChange}
+        onAmountChange={({ left }) => handleLeftAmountChange(left)}
+        onMaxButtonClick={handleMaxButtonClick}
+      />
+      <Typography color="error" variant="subtitle2" style={{ height: 21 }}>
+        {!!insufficientBalance && "Insufficient balance"}
+      </Typography>
       <Button
         color="primary"
         variant="contained"
         style={{ float: "right", marginTop: "20px" }}
+        disabled={insufficientBalance}
       >
         Mint
       </Button>

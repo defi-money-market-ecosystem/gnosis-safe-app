@@ -11,26 +11,24 @@ import { UseWalletProvider } from "use-wallet"
 import { CHAIN_ID } from "consts"
 
 ReactDOM.render(
-  <React.StrictMode>
-    <StylesProvider injectFirst>
-      <MuiThemeProvider theme={muiTheme}>
-        <ThemeProvider theme={muiTheme}>
-          <GlobalStyle />
-          <SafeProvider
-            loading={
-              <>
-                <Title size="md">Waiting for Safe...</Title>
-                <Loader size="md" />
-              </>
-            }
-          >
-            <UseWalletProvider chainId={CHAIN_ID}>
-              <App />
-            </UseWalletProvider>
-          </SafeProvider>
-        </ThemeProvider>
-      </MuiThemeProvider>
-    </StylesProvider>
-  </React.StrictMode>,
+  <StylesProvider injectFirst>
+    <MuiThemeProvider theme={muiTheme}>
+      <ThemeProvider theme={muiTheme}>
+        <GlobalStyle />
+        <SafeProvider
+          loading={
+            <>
+              <Title size="md">Waiting for Safe...</Title>
+              <Loader size="md" />
+            </>
+          }
+        >
+          <UseWalletProvider chainId={CHAIN_ID}>
+            <App />
+          </UseWalletProvider>
+        </SafeProvider>
+      </ThemeProvider>
+    </MuiThemeProvider>
+  </StylesProvider>,
   document.getElementById("root")
 )

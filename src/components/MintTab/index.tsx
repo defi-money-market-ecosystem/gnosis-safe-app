@@ -1,18 +1,14 @@
-import React, { useContext, useEffect, useState } from "react"
+import React, { useCallback, useState } from "react"
 import { Box, Button, styled, Typography } from "@material-ui/core"
-import { getTokenDetails } from "utils"
-import { Erc20Token } from "types"
-import { useWallet } from "use-wallet"
-import ERC20TokenService from "services/ERC20"
-import { useSafe } from "@rmeissner/safe-apps-react-sdk"
-import { ethers } from "ethers"
-import { M_TOKEN_MAP, TOKEN_DETAILS } from "consts"
-import useAsyncMemo from "hooks/useAsyncMemo"
-import DmmContext from "DmmContext"
+import { Erc20Token, Maybe } from "types"
+import { M_TOKEN_MAP, TokenDetailsType } from "consts"
+import { connect } from "DmmContext"
 import { map } from "lodash"
-import DmmTokenService from "services/DMMTokenService"
 import Big from "big.js"
 import Converter from "components/controls/Converter"
+import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
+import { changeToken, mint, reload } from "actions"
+import { useActionListener } from "middlewares/observerMiddleware"
 
 const HelperText = styled(Typography)({
   textAlign: "center",
@@ -20,93 +16,60 @@ const HelperText = styled(Typography)({
   fontWeight: "lighter",
 })
 
-const MintTab = () => {
-  const wallet = useWallet()
-  const safe = useSafe()
-  const {
-    state: { tokens },
-    dispatch,
-  } = useContext(DmmContext)
+interface MintTabPropsType {
+  tokens: Record<Erc20Token, TokenDetailsType>
+  selectedToken: Erc20Token
+  safeInfo: Maybe<SafeInfo>
+  loading: boolean
+  balance: string
+  exchangeRate: string
+  decimals: number
+  reload: () => void
+  changeToken: (token: Erc20Token) => void
+  mint: (amount: string) => void
+}
 
-  const [token, setToken] = useState<Erc20Token>("ETH")
-  const mToken = M_TOKEN_MAP[token]
-
-  const tokenDetails =
-    wallet.chainId === 1 || wallet.chainId === 4
-      ? getTokenDetails(wallet.chainId, token)
-      : null
+const MintTab = ({
+  tokens,
+  selectedToken,
+  safeInfo,
+  loading,
+  balance,
+  exchangeRate,
+  decimals,
+  reload,
+  changeToken,
+  mint,
+}: MintTabPropsType) => {
+  const mToken = M_TOKEN_MAP[selectedToken]
 
   const [amount, setAmount] = useState<string>("0")
 
-  const safeInfo = safe.getSafeInfo()
+  const resetAmount = useCallback(() => setAmount("0"), [])
 
-  const [balance] = useAsyncMemo<string>(
-    async () => {
-      if (safeInfo) {
-        if (tokens[token].balance) {
-          return tokens[token].balance
-        }
+  useActionListener(["SAFE_TRANSACTION_CONFIRMED"], resetAmount)
 
-        if (token === "ETH") {
-          const balance = ethers.utils
-            .parseEther(safeInfo.ethBalance)
-            .toString()
-          dispatch({ type: "UPDATE_BALANCE", payload: { token, balance } })
-          return balance
-        } else if (tokenDetails?.address && wallet.account) {
-          const balance = (
-            await ERC20TokenService.getInstance(
-              tokenDetails?.address
-            ).balanceOf(safeInfo.safeAddress)
-          ).toString()
-          dispatch({ type: "UPDATE_BALANCE", payload: { token, balance } })
-          return balance
-        }
-      }
-    },
-    "0",
-    [token, tokenDetails?.address, safeInfo]
-  )
+  const insufficientBalance =
+    balance !== "" && new Big(amount || 0).gt(balance as string)
 
-  const [exchangeRate] = useAsyncMemo<string>(
-    async () => {
-      if (tokens?.[token]?.exchangeRate) {
-        return tokens[token].exchangeRate
-      }
-
-      const exchangeRate = (
-        await DmmTokenService.getExchangeRate(tokens[token]["dmmTokenId"])
-      ).toString()
-
-      dispatch({
-        type: "UPDATE_EXCHANGE_RATE",
-        payload: { token, exchangeRate },
-      })
-      return exchangeRate
-    },
-    "0",
-    [tokens?.[token]]
-  )
-
-  const insufficientBalance = new Big(amount || 0).gt(balance as string)
-
-  useEffect(() => {
-    if (wallet.status === "disconnected") {
-      wallet.connect("injected")
-    }
-  }, [wallet])
+  const belowMinimum =
+    amount !== "" &&
+    amount !== "0" &&
+    new Big(amount || 0).lt(new Big(`1e${decimals || 0}`))
 
   const handleTokenChange = (
     e: React.ChangeEvent<{ name?: string | undefined; value: unknown }>
   ) => {
     e.preventDefault()
     setAmount("")
-    setToken(e.target.value as Erc20Token)
+    changeToken(e.target.value as Erc20Token)
   }
 
   const handleLeftAmountChange = (value: string = "0") => setAmount(value)
 
   const handleMaxButtonClick = () => setAmount((balance as string) || "0")
+
+  const handleButtonClick = () => mint(amount)
 
   return (
     <Box>
@@ -119,8 +82,8 @@ const MintTab = () => {
         Mint your tokens into mTokens so it can earn interest.
       </HelperText>
       <Converter
-        tokens={map(tokens, "symbol")}
-        leftToken={tokenDetails || TOKEN_DETAILS.ETH}
+        tokens={map(tokens, "symbol").filter((t) => !!t)}
+        leftToken={tokens[selectedToken]}
         rightToken={mToken}
         leftValue={amount}
         exchangeRate={exchangeRate as string}
@@ -129,13 +92,15 @@ const MintTab = () => {
         onMaxButtonClick={handleMaxButtonClick}
       />
       <Typography color="error" variant="subtitle2" style={{ height: 21 }}>
-        {!!insufficientBalance && "Insufficient balance"}
+        {(!!belowMinimum && "Must be >= 1") ||
+          (!!insufficientBalance && "Insufficient balance")}
       </Typography>
       <Button
         color="primary"
         variant="contained"
         style={{ float: "right", marginTop: "20px" }}
-        disabled={insufficientBalance}
+        disabled={insufficientBalance || belowMinimum || loading}
+        onClick={handleButtonClick}
       >
         Mint
       </Button>
@@ -143,4 +108,19 @@ const MintTab = () => {
   )
 }
 
-export default MintTab
+export default connect<MintTabPropsType>(
+  ({ tokens, selectedToken, safeInfo, loading }) => ({
+    tokens,
+    selectedToken,
+    safeInfo,
+    loading,
+    balance: tokens?.[selectedToken]?.balance || "",
+    exchangeRate: tokens?.[selectedToken]?.exchangeRate || "",
+    decimals: tokens?.[selectedToken]?.decimals || 18,
+  }),
+  (dispatch, { selectedToken: token }) => ({
+    reload: () => dispatch(reload()),
+    changeToken: (newToken: Erc20Token) => dispatch(changeToken(newToken)),
+    mint: (amount: string) => dispatch(mint(token, amount)),
+  })
+)(MintTab)

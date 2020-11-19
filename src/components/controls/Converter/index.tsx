@@ -4,11 +4,11 @@ import AmountInput from "components/controls/AmountInput"
 import ArrowForward from "@material-ui/icons/ArrowForward"
 import Big from "big.js"
 import NumberUtil from "utils/NumberUtil"
-import { TOKEN_DETAILS_TYPE } from "consts"
+import { TokenDetailsType } from "consts"
 
 interface ConverterPropsType {
   tokens: Array<string>
-  leftToken: TOKEN_DETAILS_TYPE
+  leftToken: TokenDetailsType
   leftValue: string
   rightToken: string
   exchangeRate: string
@@ -34,7 +34,7 @@ const Converter = (props: ConverterPropsType) => {
   } = props
 
   const rightAmount =
-    exchangeRate !== "0" && leftValue !== ""
+    exchangeRate !== "" && exchangeRate !== "0" && leftValue !== ""
       ? new Big(leftValue || "0")
           .times(NumberUtil._1)
           .div(exchangeRate as string)
@@ -43,7 +43,7 @@ const Converter = (props: ConverterPropsType) => {
 
   const handleLeftAmountChange = (value: string = "0") => {
     const right =
-      exchangeRate !== "0" && value !== ""
+      exchangeRate !== "" && exchangeRate !== "0" && value !== ""
         ? new Big(value || "0")
             .times(NumberUtil._1)
             .div(exchangeRate as string)
@@ -58,7 +58,7 @@ const Converter = (props: ConverterPropsType) => {
     }
 
     const left =
-      exchangeRate !== "0" && value !== ""
+      exchangeRate !== "" && exchangeRate !== "0" && value !== ""
         ? new Big(value)
             .div(NumberUtil._1)
             .times(exchangeRate as string)
@@ -72,12 +72,14 @@ const Converter = (props: ConverterPropsType) => {
     <Box display="flex" alignItems="flex-end">
       <AmountInput
         tokens={tokens}
-        selectedToken={leftToken.symbol}
+        selectedToken={leftToken?.symbol || "ETH"}
         decimals={leftToken?.decimals || 0}
         value={leftValue}
         onTokenChange={onTokenChange}
         onChange={handleLeftAmountChange}
         onMaxButtonClick={onMaxButtonClick}
+        fixedToken={!tokens.length}
+        disabled={!tokens.length || !leftToken?.symbol}
       />
       <ArrowForward
         style={{ margin: "12px", color: theme.palette.text.primary }}
@@ -89,6 +91,7 @@ const Converter = (props: ConverterPropsType) => {
         decimals={leftToken?.decimals || 0}
         value={rightAmount}
         onChange={handleRightAmountChange}
+        disabled={!tokens.length || !leftToken?.symbol}
       />
     </Box>
   )

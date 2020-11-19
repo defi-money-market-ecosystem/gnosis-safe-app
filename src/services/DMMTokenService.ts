@@ -1,14 +1,24 @@
-import { MToken, Erc20Token } from "types"
-import { REVERSE_M_TOKEN_MAP, TOKEN_DETAILS } from "consts"
+import { MToken, Erc20Token, ChainID } from "types"
+import { REVERSE_M_TOKEN_MAP, TOKEN_DETAILS, TokenDetailsType, TOKENS } from "consts"
 import DmmToken from "abi/DmmToken.json"
-import DmmEther from "abi/DmmEther.json"
 import DmmWeb3Service from "./DmmWeb3Service"
 import NumberUtil from "utils/NumberUtil"
+import { Contract } from "ethers"
 
 const baseUrl = "https://api.defimoneymarket.com"
 
+export interface DmmTokenDetailsType extends TokenDetailsType {
+  dmmTokenId: string
+  dmmTokenSymbol: string
+  dmmTokenAddress: string
+  imageUrl: string
+  address: string
+}
+
 class DmmTokenService {
-  static async getDmmTokens() {
+  static dmmTokenContracts: Record<string, Contract> = {}
+
+  static async getDmmTokens(chainId: ChainID): Promise<Record<Erc20Token, DmmTokenDetailsType>> {
     const response = await fetch(`${baseUrl}/v1/dmm/tokens`, {
       headers: { Accept: "application/json" },
     })
@@ -24,7 +34,7 @@ class DmmTokenService {
           dmmTokenSymbol: token["symbol"],
           dmmTokenAddress: token["dmm_token_address"],
           imageUrl: token["image_url"],
-          address: token["underlying_token_address"],
+          address: TOKENS[chainId][erc20Token],
           ...TOKEN_DETAILS[erc20Token],
         },
       }
@@ -98,12 +108,19 @@ class DmmTokenService {
     }
   }
 
+  static dmmTokenContract(dmmTokenAddress: string) {
+    if(!DmmTokenService.dmmTokenContracts[dmmTokenAddress]) {
+      DmmTokenService.dmmTokenContracts[dmmTokenAddress] = DmmWeb3Service.instance.web3.eth.Contract(
+        DmmToken,
+        dmmTokenAddress
+      )
+    }
+
+    return DmmTokenService.dmmTokenContracts[dmmTokenAddress]
+  }
+
   static mint(dmmTokenAddress: string, owner: string, underlyingAmount: any) {
-    const dmmToken = new DmmWeb3Service.instance.web3.eth.Contract(
-      DmmToken,
-      dmmTokenAddress
-    )
-    return dmmToken.methods
+    return DmmTokenService.dmmTokenContract(dmmTokenAddress).methods
       .mint(underlyingAmount.toString(10))
       .send({ from: owner })
   }
@@ -113,21 +130,13 @@ class DmmTokenService {
     owner: string,
     underlyingAmount: any
   ) {
-    const dmmToken = new DmmWeb3Service.instance.web3.eth.Contract(
-      DmmEther,
-      dmmTokenAddress
-    )
-    return dmmToken.methods
+    return DmmTokenService.dmmTokenContract(dmmTokenAddress).methods
       .mintViaEther()
       .send({ from: owner, value: underlyingAmount.toString(10) })
   }
 
   static redeem(dmmTokenAddress: string, owner: string, dmmAmount: any) {
-    const dmmToken = new DmmWeb3Service.instance.web3.eth.Contract(
-      DmmToken,
-      dmmTokenAddress
-    )
-    return dmmToken.methods.redeem(dmmAmount.toString(10)).send({ from: owner })
+    return DmmTokenService.dmmTokenContract(dmmTokenAddress).methods.redeem(dmmAmount.toString(10)).send({ from: owner })
   }
 }
 

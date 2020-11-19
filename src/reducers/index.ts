@@ -1,45 +1,38 @@
+import { TokenDetailsType } from './../consts'
+import { Erc20Token } from './../types'
 import { Action, AppState, DmmReducerType, initialState } from "DmmContext"
 import { map } from "lodash"
 
 const DmmReducer: DmmReducerType = (
   state: AppState = initialState,
   action: Action
-) => {
+): AppState => {
+
   switch (action.type) {
-    case "LOADING":
+    case "SET_TOKENS":
       return {
-        ...initialState,
-        loading: true,
-      }
-    case "RESET_STATE":
-      return {
-        tokens: action.payload.tokens,
+        ...state,
+        tokens: action.payload.tokens as Record<Erc20Token,TokenDetailsType>,
         tokenKeys: map(action.payload.tokens, "symbol"),
         loading: false,
       }
-    case "UPDATE_BALANCE": {
-      const { token, balance } = action.payload || {}
+    case "SAFE_INFO_RECEIVED":
       return {
         ...state,
-        tokens: {
-          ...state.tokens,
-          [token]: { ...state?.tokens?.[token as string], balance },
-        },
+        safeInfo: action.payload.safeInfo
       }
-    }
-    case "UPDATE_EXCHANGE_RATE": {
-      const { token, exchangeRate } = action.payload || {}
+    case "CHANGE_TOKEN": {
+      const {token} = action.payload
       return {
         ...state,
-        tokens: {
-          ...state.tokens,
-          [token]: {
-            ...state?.tokens?.[token as string],
-            exchangeRate,
-          },
-        },
+        selectedToken: token
       }
     }
+    case "SET_WALLET": 
+      return {
+        ...state,
+        wallet: action.payload.wallet
+      }
     default:
       return state
   }

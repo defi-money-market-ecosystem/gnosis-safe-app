@@ -36,6 +36,8 @@ const StyledInput = styled(Input)({
 
 const StyledTypography = styled(Typography)({
   padding: "10px 20px",
+  height: "40px",
+  boxSizing: "border-box",
 })
 
 const defaultTokens = ["ETH", "DAI"]
@@ -56,6 +58,7 @@ export interface AmountInputProps
       ) => void)
     | undefined
   onMaxButtonClick?: (event: React.MouseEvent<any, MouseEvent>) => void
+  disabled?: boolean
 }
 
 const AmountInput = (props: AmountInputProps) => {
@@ -66,6 +69,7 @@ const AmountInput = (props: AmountInputProps) => {
     onTokenChange,
     onMaxButtonClick,
     onChange = () => {},
+    disabled = false,
     ...inputProps
   } = props
 
@@ -92,6 +96,7 @@ const AmountInput = (props: AmountInputProps) => {
         renderInput={(props: React.HTMLProps<HTMLInputElement>) => (
           <StyledInput
             inputProps={props}
+            disabled={disabled}
             disableUnderline
             endAdornment={
               fixedToken ? (

@@ -36,14 +36,18 @@ const StyledInput = styled(Input)({
 
 const StyledTypography = styled(Typography)({
   padding: "10px 20px",
+  height: "40px",
+  boxSizing: "border-box",
 })
 
 const defaultTokens = ["ETH", "DAI"]
 
-export interface AmountInputProps extends BigNumberInputProps {
+export interface AmountInputProps
+  extends Omit<BigNumberInputProps, "onChange"> {
   tokens?: Array<string>
   selectedToken?: string
   fixedToken?: boolean
+  onChange?: (value: string) => void
   onTokenChange?:
     | ((
         event: React.ChangeEvent<{
@@ -54,6 +58,7 @@ export interface AmountInputProps extends BigNumberInputProps {
       ) => void)
     | undefined
   onMaxButtonClick?: (event: React.MouseEvent<any, MouseEvent>) => void
+  disabled?: boolean
 }
 
 const AmountInput = (props: AmountInputProps) => {
@@ -63,6 +68,8 @@ const AmountInput = (props: AmountInputProps) => {
     fixedToken = false,
     onTokenChange,
     onMaxButtonClick,
+    onChange = () => {},
+    disabled = false,
     ...inputProps
   } = props
 
@@ -84,10 +91,12 @@ const AmountInput = (props: AmountInputProps) => {
         </div>
       )}
       <BigNumberInput
+        onChange={onChange}
         {...inputProps}
         renderInput={(props: React.HTMLProps<HTMLInputElement>) => (
           <StyledInput
             inputProps={props}
+            disabled={disabled}
             disableUnderline
             endAdornment={
               fixedToken ? (

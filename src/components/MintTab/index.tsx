@@ -1,17 +1,14 @@
-import React, { useState } from "react"
-import { Box, Button, styled, Typography, useTheme } from "@material-ui/core"
-import AmountInput from "../Controls/AmountInput"
-import ArrowForward from "@material-ui/icons/ArrowForward"
-
-type AllowedToken = "ETH" | "DAI" | "USDC" | "USDT"
-type MToken = "mETH" | "mDAI" | "mUSDC" | "mUSDT"
-
-const mTokenMap: Record<AllowedToken, MToken> = {
-  ETH: "mETH",
-  DAI: "mDAI",
-  USDC: "mUSDC",
-  USDT: "mUSDT",
-}
+import React, { useCallback, useState } from "react"
+import { Box, Button, styled, Typography } from "@material-ui/core"
+import { Erc20Token, Maybe } from "types"
+import { M_TOKEN_MAP, TokenDetailsType } from "consts"
+import { connect } from "DmmContext"
+import { map } from "lodash"
+import Big from "big.js"
+import Converter from "components/controls/Converter"
+import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
+import { changeToken, mint, reload } from "actions"
+import { useActionListener } from "middlewares/observerMiddleware"
 
 const HelperText = styled(Typography)({
   textAlign: "center",
@@ -19,21 +16,60 @@ const HelperText = styled(Typography)({
   fontWeight: "lighter",
 })
 
-const MintTab = () => {
-  const theme = useTheme()
-  const [token, setToken] = useState<AllowedToken>("ETH")
+interface MintTabPropsType {
+  tokens: Record<Erc20Token, TokenDetailsType>
+  selectedToken: Erc20Token
+  safeInfo: Maybe<SafeInfo>
+  loading: boolean
+  balance: string
+  exchangeRate: string
+  decimals: number
+  reload: () => void
+  changeToken: (token: Erc20Token) => void
+  mint: (amount: string) => void
+}
+
+const MintTab = ({
+  tokens,
+  selectedToken,
+  safeInfo,
+  loading,
+  balance,
+  exchangeRate,
+  decimals,
+  reload,
+  changeToken,
+  mint,
+}: MintTabPropsType) => {
+  const mToken = M_TOKEN_MAP[selectedToken]
+
   const [amount, setAmount] = useState<string>("0")
-  const mToken = mTokenMap[token]
+
+  const resetAmount = useCallback(() => setAmount("0"), [])
+
+  useActionListener(["SAFE_TRANSACTION_CONFIRMED"], resetAmount)
+
+  const insufficientBalance =
+    balance !== "" && new Big(amount || 0).gt(balance as string)
+
+  const belowMinimum =
+    amount !== "" &&
+    amount !== "0" &&
+    new Big(amount || 0).lt(new Big(`1e${decimals || 0}`))
 
   const handleTokenChange = (
     e: React.ChangeEvent<{ name?: string | undefined; value: unknown }>
   ) => {
     e.preventDefault()
-    setToken(e.target.value as AllowedToken)
-    setAmount("0")
+    setAmount("")
+    changeToken(e.target.value as Erc20Token)
   }
 
-  const handleAmountChange = (value: string) => setAmount(value)
+  const handleLeftAmountChange = (value: string = "0") => setAmount(value)
+
+  const handleMaxButtonClick = () => setAmount((balance as string) || "0")
+
+  const handleButtonClick = () => mint(amount)
 
   return (
     <Box>
@@ -45,33 +81,26 @@ const MintTab = () => {
       >
         Mint your tokens into mTokens so it can earn interest.
       </HelperText>
-      <Box display="flex" alignItems="flex-end">
-        <AmountInput
-          selectedToken={token}
-          decimals={0}
-          value={amount}
-          onTokenChange={handleTokenChange}
-          onChange={handleAmountChange}
-          onMaxButtonClick={(e) => {
-            // @TODO: Set amount to max
-          }}
-        />
-        <ArrowForward
-          style={{ margin: "12px", color: theme.palette.text.primary }}
-          color="primary"
-        />
-        <AmountInput
-          selectedToken={mToken}
-          fixedToken
-          decimals={0}
-          value="0"
-          onChange={(e: any) => {}}
-        />
-      </Box>
+      <Converter
+        tokens={map(tokens, "symbol").filter((t) => !!t)}
+        leftToken={tokens[selectedToken]}
+        rightToken={mToken}
+        leftValue={amount}
+        exchangeRate={exchangeRate as string}
+        onTokenChange={handleTokenChange}
+        onAmountChange={({ left }) => handleLeftAmountChange(left)}
+        onMaxButtonClick={handleMaxButtonClick}
+      />
+      <Typography color="error" variant="subtitle2" style={{ height: 21 }}>
+        {(!!belowMinimum && "Must be >= 1") ||
+          (!!insufficientBalance && "Insufficient balance")}
+      </Typography>
       <Button
         color="primary"
         variant="contained"
         style={{ float: "right", marginTop: "20px" }}
+        disabled={insufficientBalance || belowMinimum || loading}
+        onClick={handleButtonClick}
       >
         Mint
       </Button>
@@ -79,4 +108,19 @@ const MintTab = () => {
   )
 }
 
-export default MintTab
+export default connect<MintTabPropsType>(
+  ({ tokens, selectedToken, safeInfo, loading }) => ({
+    tokens,
+    selectedToken,
+    safeInfo,
+    loading,
+    balance: tokens?.[selectedToken]?.balance || "",
+    exchangeRate: tokens?.[selectedToken]?.exchangeRate || "",
+    decimals: tokens?.[selectedToken]?.decimals || 18,
+  }),
+  (dispatch, { selectedToken: token }) => ({
+    reload: () => dispatch(reload()),
+    changeToken: (newToken: Erc20Token) => dispatch(changeToken(newToken)),
+    mint: (amount: string) => dispatch(mint(token, amount)),
+  })
+)(MintTab)

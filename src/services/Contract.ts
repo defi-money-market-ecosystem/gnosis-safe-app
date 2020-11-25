@@ -1,4 +1,4 @@
-import ethers from 'ethers';
+import {ethers} from 'ethers';
 
 class CustomContract {
   static instances: Record<string, CustomContract> = {}
@@ -31,7 +31,7 @@ class CustomContract {
     }
 
     if (!this.contract) {
-      await ethereum?.enable()
+      await ethereum?.send('eth_requestAccounts')
 
       if (this.address) {
         const provider = new ethers.providers.Web3Provider(ethereum as any);

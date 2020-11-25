@@ -38,3 +38,9 @@ export const mint = (token: Erc20Token, amount: string) => ({
   type: "MINT",
   payload: { token, amount },
 })
+
+export const redeem = (token: Erc20Token, amount: string) => ({
+  type: "REDEEM",
+  payload: { token, amount },
+})
+

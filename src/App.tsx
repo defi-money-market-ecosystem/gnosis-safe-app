@@ -12,6 +12,8 @@ import {
   safeTransactionRejected,
 } from "actions"
 import observerMiddleware from "middlewares/observerMiddleware"
+import useCallbackOnce from "hooks/useCallbackOnce"
+import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
 
 const Container = styled.form`
   margin-bottom: 2rem;
@@ -32,20 +34,22 @@ const App: React.FC = () => {
   )
   const { dispatch } = contextValue
 
+  const dispatchSafeInfoReceived = useCallbackOnce((safeInfo: SafeInfo) => {
+    if (!contextValue.state.safeInfo) {
+      dispatch(safeInfoReceived(safeInfo))
+    }
+  })
+
   useEffect(() => {
     gnosisSafeSdk.addListeners({
-      onSafeInfo: (safeInfo) => {
-        if (!contextValue.state.safeInfo) {
-          dispatch(safeInfoReceived(safeInfo))
-        }
-      },
+      onSafeInfo: (safeInfo) => dispatchSafeInfoReceived(safeInfo),
       onTransactionConfirmation: (e) =>
         dispatch(safeTransactionConfirmed(e.safeTxHash)),
       onTransactionRejection: (e) => dispatch(safeTransactionRejected()),
     })
 
     return () => gnosisSafeSdk.removeListeners()
-  }, [contextValue.state.safeInfo, dispatch])
+  }, [dispatch, dispatchSafeInfoReceived])
 
   return (
     <Container>

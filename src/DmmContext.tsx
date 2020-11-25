@@ -8,10 +8,10 @@ import React, {
 import { Erc20Token, Maybe } from "./types"
 import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
 import { Wallet } from "use-wallet"
-import { TokenDetailsType } from "consts"
+import { DmmTokenDetailsType } from "services/DMMTokenService"
 
 export interface AppState {
-  tokens: Record<Erc20Token, Maybe<TokenDetailsType>>
+  tokens: Record<Erc20Token, Maybe<DmmTokenDetailsType>>
   tokenKeys: Array<Erc20Token>
   loading: boolean
   selectedToken: Erc20Token

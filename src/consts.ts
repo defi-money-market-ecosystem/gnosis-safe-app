@@ -5,6 +5,11 @@ import usdcIcon from "./images/asset_USDC.svg"
 import usdtIcon from "./images/asset_USDT.svg"
 import { Erc20Token, MToken } from "types"
 
+export const CHAIN_ID_MAP: Record<string, ChainID> = {
+  'mainnet': 1,
+  'rinkeby': 4
+}
+
 export const M_TOKEN_MAP: Record<Erc20Token, MToken> = {
   ETH: "mETH",
   DAI: "mDAI",
@@ -72,6 +77,6 @@ export const TOKEN_DETAILS = {
 
 const { ethereum } = window
 
-export const CHAIN_ID : ChainID =
-  (ethereum && parseInt((ethereum as any).chainId, 16)) ||
-  parseInt(process.env.REACT_APP_NETWORK_ID || "4") === 1 ? 1 : 4
+export const chainId = parseInt((ethereum as any)?.chainId)
+
+console.log({chainId})

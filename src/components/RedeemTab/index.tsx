@@ -1,14 +1,15 @@
 import React, { useCallback, useState } from "react"
 import { Box, Button, styled, Typography } from "@material-ui/core"
-import { Erc20Token, Maybe } from "types"
+import { Erc20Token, Maybe, MToken } from "types"
 import { connect } from "DmmContext"
 import { map } from "lodash"
 import Big from "big.js"
 import Converter from "components/controls/Converter"
 import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
-import { changeToken, mint, reload } from "actions"
+import { changeToken, redeem, reload } from "actions"
 import { useActionListener } from "middlewares/observerMiddleware"
 import { DmmTokenDetailsType } from "services/DMMTokenService"
+import { REVERSE_M_TOKEN_MAP } from "consts"
 import NumberUtil from "utils/NumberUtil"
 
 const HelperText = styled(Typography)({
@@ -17,7 +18,7 @@ const HelperText = styled(Typography)({
   fontWeight: "lighter",
 })
 
-interface MintTabPropsType {
+interface RedeemTabPropsType {
   tokens: Record<Erc20Token, DmmTokenDetailsType>
   selectedToken: Erc20Token
   safeInfo: Maybe<SafeInfo>
@@ -27,10 +28,10 @@ interface MintTabPropsType {
   decimals: number
   reload: () => void
   changeToken: (token: Erc20Token) => void
-  mint: (amount: string) => void
+  redeem: (amount: string) => void
 }
 
-const MintTab = ({
+const RedeemTab = ({
   tokens,
   selectedToken,
   safeInfo,
@@ -40,20 +41,17 @@ const MintTab = ({
   decimals,
   reload,
   changeToken,
-  mint,
-}: MintTabPropsType) => {
+  redeem,
+}: RedeemTabPropsType) => {
   const [amount, setAmount] = useState<string>("0")
 
   const resetAmount = useCallback(() => setAmount("0"), [])
 
   useActionListener(["SAFE_TRANSACTION_CONFIRMED"], resetAmount)
 
-  const token = selectedToken && tokens[selectedToken]
-  const tokenPair = token
-    ? [tokens[selectedToken].symbol, tokens[selectedToken].dmmTokenSymbol]
-    : []
-
-  const exchangeRateBig = new Big(exchangeRate || "1").div(NumberUtil._1)
+  const exchangeRateBig = new Big(1)
+    .times(NumberUtil._1)
+    .div(exchangeRate || "1")
 
   const insufficientBalance =
     balance !== "" && new Big(amount || 0).gt(balance as string)
@@ -63,19 +61,24 @@ const MintTab = ({
     amount !== "0" &&
     new Big(amount || 0).lt(new Big(`1e${decimals || 0}`))
 
+  const token = selectedToken && tokens[selectedToken]
+  const tokenPair = token
+    ? [tokens[selectedToken].dmmTokenSymbol, tokens[selectedToken].symbol]
+    : []
+
   const handleTokenChange = (
     e: React.ChangeEvent<{ name?: string | undefined; value: unknown }>
   ) => {
     e.preventDefault()
     setAmount("")
-    changeToken(e.target.value as Erc20Token)
+    changeToken(REVERSE_M_TOKEN_MAP[e.target.value as MToken])
   }
 
   const handleLeftAmountChange = (value: string = "0") => setAmount(value)
 
   const handleMaxButtonClick = () => setAmount((balance as string) || "0")
 
-  const handleButtonClick = () => mint(amount)
+  const handleButtonClick = () => redeem(amount)
 
   return (
     <Box>
@@ -85,10 +88,10 @@ const MintTab = ({
         variant="body2"
         color="textPrimary"
       >
-        Mint your tokens into mTokens so it can earn interest.
+        Redeem your mTokens back to tokens with interest.
       </HelperText>
       <Converter
-        tokens={map(tokens, "symbol").filter((t) => !!t)}
+        tokens={map(tokens, "dmmTokenSymbol").filter((t) => !!t)}
         tokenPair={tokenPair}
         decimals={token?.decimals || 0}
         leftValue={amount}
@@ -108,25 +111,25 @@ const MintTab = ({
         disabled={insufficientBalance || belowMinimum || loading}
         onClick={handleButtonClick}
       >
-        Mint
+        Redeem
       </Button>
     </Box>
   )
 }
 
-export default connect<MintTabPropsType>(
+export default connect<RedeemTabPropsType>(
   ({ tokens, selectedToken, safeInfo, loading }) => ({
     tokens,
     selectedToken,
     safeInfo,
     loading,
-    balance: tokens?.[selectedToken]?.balance || "",
+    balance: tokens?.[selectedToken]?.dmmBalance || "",
     exchangeRate: tokens?.[selectedToken]?.exchangeRate || "",
     decimals: tokens?.[selectedToken]?.decimals || 18,
   }),
   (dispatch, { selectedToken: token }) => ({
     reload: () => dispatch(reload()),
     changeToken: (newToken: Erc20Token) => dispatch(changeToken(newToken)),
-    mint: (amount: string) => dispatch(mint(token, amount)),
+    redeem: (amount: string) => dispatch(redeem(token, amount)),
   })
-)(MintTab)
+)(RedeemTab)

@@ -1,5 +1,4 @@
-import { CHAIN_ID } from 'consts'
-import { transactionFailed } from "./../actions/index"
+import { CHAIN_ID_MAP } from "consts"
 import { Erc20Token } from "types"
 import Contract from "services/Contract"
 import DmmToken from "abi/DmmToken.json"
@@ -9,36 +8,54 @@ import { repeatUntil } from "utils"
 import { Dispatch } from "react"
 import { Action } from "DmmContext"
 import gnosisSafeSdk from "gnosisSafeSdk"
-import { ethers } from "ethers"
+import { BigNumber, ethers } from "ethers"
 import ERC20TokenService from "services/ERC20TokenService"
 import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
-import { reload, transactionConfirmed } from "actions"
+import { reload, transactionConfirmed, transactionFailed } from "actions"
 
 const loadTokens = async (safeInfo: SafeInfo) => {
   const tokens = await DmmTokenService.getDmmTokens(
-    CHAIN_ID
+    CHAIN_ID_MAP[safeInfo.network]
   )
 
+  console.log("loading tokens")
+
   for (const key in tokens) {
+    console.log({ key })
     const token = tokens[key as Erc20Token]
 
     const balance =
-      token.symbol === "ETH"
+      !!token.address &&
+      !!safeInfo.safeAddress &&
+      (token.symbol === "ETH"
         ? ethers.utils.parseEther(safeInfo.ethBalance).toString()
         : await (await ERC20TokenService.getInstance(token.address)).balanceOf(
             safeInfo.safeAddress
           )
+      ).toString()
+
+    const dmmBalance =
+      !!token.dmmTokenAddress &&
+      !!safeInfo.safeAddress &&
+      // token.symbol === "ETH" ? await DmmWeb3Service.instance.web3.eth.getBalance(safeInfo.safeAddress) :
+      (await DmmTokenService.balanceOf(
+        token.dmmTokenAddress,
+        safeInfo.safeAddress
+      ))
 
     const exchangeRate = await DmmTokenService.getExchangeRate(token.dmmTokenId)
-    tokens[key as Erc20Token] = { ...token, balance, exchangeRate }
+    tokens[key as Erc20Token] = { ...token, balance, exchangeRate, dmmBalance }
   }
 
+  console.log({ tokens })
   return tokens
 }
 
 const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
   action: Action
 ) => {
+  const state = store.getState()
+  console.log({ action, state, where: "dataMiddleware" })
   switch (action.type) {
     case "SAFE_INFO_RECEIVED": {
       loadTokens(action.payload.safeInfo).then((tokens) =>
@@ -73,14 +90,73 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
         .finally(() => store.dispatch(reload()))
       break
     }
+    case "TRANSACTION_FAILED": {
+      console.log({ action })
+      break
+    }
     case "RELOAD": {
-      const {safeInfo} = store.getState()
+      const { safeInfo } = store.getState()
       loadTokens(safeInfo).then((tokens) =>
         store.dispatch({ type: "SET_TOKENS", payload: { tokens } })
       )
       break
     }
     case "MINT": {
+      const { tokens, safeInfo } = store.getState()
+      const { token, amount } = action.payload
+      const amountBn = BigNumber.from(amount)
+      const isEth = token === "ETH"
+      const abi = isEth ? DmmEther : DmmToken
+
+      Contract.getInstance(tokens[token].dmmTokenAddress, abi).then(
+        async (instance) => {
+          const txs = []
+          if (!isEth) {
+            const erc20TokenContract = (
+              await ERC20TokenService.getInstance(tokens[token].address)
+            ).contract
+            const allowance = await erc20TokenContract.allowance(
+              safeInfo.safeAddress,
+              tokens[token].dmmTokenAddress
+            )
+
+            console.log({
+              allowance: allowance.toString(),
+              token: tokens[token],
+            })
+            if (!allowance.gte(amountBn)) {
+              txs.push({
+                to: tokens[token].address,
+                value: '0',
+                data: erc20TokenContract.interface.encodeFunctionData(
+                  "approve",
+                  [tokens[token].dmmTokenAddress, amountBn]
+                ),
+              })
+            }
+          }
+
+          const data = isEth
+            ? instance.contract.interface.encodeFunctionData("mintViaEther")
+            : instance.contract.interface.encodeFunctionData("mint", [amountBn])
+
+          txs.push({
+            to: tokens[token].dmmTokenAddress,
+            value: isEth ? amount : '0',
+            data,
+          })
+
+          console.log({ txs, instance, amount })
+          if (txs.length) {
+
+            gnosisSafeSdk.sendTransactions(txs)
+          }
+        }
+      )
+
+      break
+    }
+    case "REDEEM": {
       const { tokens } = store.getState()
       const { token, amount } = action.payload
       const isEth = token === "ETH"
@@ -93,7 +169,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
               to: tokens[token].dmmTokenAddress,
               value: isEth ? amount : 0,
               data: instance.contract.interface.encodeFunctionData(
-                isEth ? "mintViaEther" : "mint",
+                isEth ? "redeemViaEther" : "redeem",
                 isEth ? undefined : [amount]
               ),
             },

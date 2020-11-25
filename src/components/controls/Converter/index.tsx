@@ -3,15 +3,13 @@ import { Box, useTheme } from "@material-ui/core"
 import AmountInput from "components/controls/AmountInput"
 import ArrowForward from "@material-ui/icons/ArrowForward"
 import Big from "big.js"
-import NumberUtil from "utils/NumberUtil"
-import { TokenDetailsType } from "consts"
 
 interface ConverterPropsType {
   tokens: Array<string>
-  leftToken: TokenDetailsType
+  tokenPair: Array<string>
   leftValue: string
-  rightToken: string
-  exchangeRate: string
+  decimals: number
+  exchangeRate: Big
   onTokenChange: (
     e: React.ChangeEvent<{ name?: string | undefined; value: unknown }>
   ) => void
@@ -24,9 +22,9 @@ const Converter = (props: ConverterPropsType) => {
 
   const {
     tokens,
-    leftToken,
+    tokenPair = ["ETH", "mETH"],
+    decimals = 18,
     leftValue,
-    rightToken,
     exchangeRate,
     onTokenChange,
     onAmountChange,
@@ -34,20 +32,14 @@ const Converter = (props: ConverterPropsType) => {
   } = props
 
   const rightAmount =
-    exchangeRate !== "" && exchangeRate !== "0" && leftValue !== ""
-      ? new Big(leftValue || "0")
-          .times(NumberUtil._1)
-          .div(exchangeRate as string)
-          .toFixed(0)
+    !exchangeRate.eq(0) && leftValue !== ""
+      ? new Big(leftValue || "0").div(exchangeRate).toFixed(0)
       : ""
 
   const handleLeftAmountChange = (value: string = "0") => {
     const right =
-      exchangeRate !== "" && exchangeRate !== "0" && value !== ""
-        ? new Big(value || "0")
-            .times(NumberUtil._1)
-            .div(exchangeRate as string)
-            .toFixed(0)
+      !exchangeRate.eq(0) && value !== ""
+        ? new Big(value || "0").div(exchangeRate).toFixed(0)
         : ""
     onAmountChange({ left: value, right })
   }
@@ -58,11 +50,8 @@ const Converter = (props: ConverterPropsType) => {
     }
 
     const left =
-      exchangeRate !== "" && exchangeRate !== "0" && value !== ""
-        ? new Big(value)
-            .div(NumberUtil._1)
-            .times(exchangeRate as string)
-            .toFixed(0)
+      !exchangeRate.eq(0) && value !== ""
+        ? new Big(value).times(exchangeRate).toFixed(0)
         : ""
 
     onAmountChange({ left, right: value })
@@ -72,26 +61,26 @@ const Converter = (props: ConverterPropsType) => {
     <Box display="flex" alignItems="flex-end">
       <AmountInput
         tokens={tokens}
-        selectedToken={leftToken?.symbol || "ETH"}
-        decimals={leftToken?.decimals || 0}
+        selectedToken={tokenPair?.[0] || "ETH"}
+        decimals={decimals || 0}
         value={leftValue}
         onTokenChange={onTokenChange}
         onChange={handleLeftAmountChange}
         onMaxButtonClick={onMaxButtonClick}
         fixedToken={!tokens.length}
-        disabled={!tokens.length || !leftToken?.symbol}
+        disabled={!tokens.length || !tokenPair?.[0]}
       />
       <ArrowForward
         style={{ margin: "12px", color: theme.palette.text.primary }}
         color="primary"
       />
       <AmountInput
-        selectedToken={rightToken}
+        selectedToken={tokenPair[1]}
         fixedToken
-        decimals={leftToken?.decimals || 0}
+        decimals={decimals || 0}
         value={rightAmount}
         onChange={handleRightAmountChange}
-        disabled={!tokens.length || !leftToken?.symbol}
+        disabled={!tokens.length || !tokenPair?.[1]}
       />
     </Box>
   )

@@ -3,7 +3,8 @@ import Tabs from "@material-ui/core/Tabs"
 import Tab from "@material-ui/core/Tab"
 import styled from "styled-components"
 import { Theme, withStyles } from "@material-ui/core"
-import MintTab from "../MintTab"
+import MintTab from "components/MintTab"
+import RedeemTab from "components/RedeemTab"
 
 interface StyledTabsProps {
   value: number
@@ -33,7 +34,7 @@ const tabData = [
   },
   {
     label: "Redeem",
-    tab: "",
+    tab: RedeemTab,
   },
 ]
 

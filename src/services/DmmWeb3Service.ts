@@ -1,7 +1,10 @@
+import { Maybe } from 'types'
+import { chainId } from 'consts'
 import Onboard from "bnc-onboard";
 import Notify from "bnc-notify";
 import Web3 from "web3";
 import BlockNativeWalletInterfaces from "./BlockNativeWalletInterfaces";
+import { API } from 'bnc-onboard/dist/src/interfaces';
 
 const infuraApiKey = '6016c4ab356b402ab455b2a8890efe7f';
 
@@ -13,13 +16,15 @@ class DmmWeb3Service {
 
   static instance = new DmmWeb3Service();
 
-  static onboard: any;
+  static onboard: API = DmmWeb3Service.instance.onboard;
 
   static notify: any;
 
   static walletAddress = () => DmmWeb3Service.onboard.getState().address;
 
   static walletChangeFns: Record<any, any> = {};
+
+  static initiated: Maybe<Promise<DmmWeb3Service>> = null
 
   static watchHash(hash: string) {
     if (process.env.REACT_APP_ENVIRONMENT !== 'LOCAL') {
@@ -38,14 +43,14 @@ class DmmWeb3Service {
 
   web3: any = null
   wallet: any = null
-  onBoard = null
+  onboard: API
 
   constructor() {
     const walletInterfaces: any = new BlockNativeWalletInterfaces({infuraApiKey});
-
-    DmmWeb3Service.onboard = Onboard({
+    console.log({ddd: DmmWeb3Service.onboard})
+    this.onboard = DmmWeb3Service.onboard || Onboard({
       dappId: '9171b34b-ab20-4982-b3d9-43c073657a88',
-      networkId: Number.parseInt(process.env.REACT_APP_NETWORK_ID || '4'),
+      networkId: Number.parseInt(chainId+'' || '4'),
       walletSelect: {
         wallets: [
           {
@@ -116,7 +121,9 @@ class DmmWeb3Service {
         }
       }
     });
+  }
 
+  static async init() {
     let previousWallet;
     if (window.localStorage && typeof window.localStorage.getItem === 'function') {
       previousWallet = window.localStorage.getItem('selectedWallet');
@@ -140,16 +147,33 @@ class DmmWeb3Service {
     }
 
     if (previousWallet) {
-      DmmWeb3Service.onboard.walletSelect(previousWallet)
+      console.log("previous wallet")
+      await DmmWeb3Service.onboard.walletSelect(previousWallet)
         .catch((error: any) => {
           console.error("Could not load previously cached wallet due to error: ", error);
         });
+    } else {
+      await DmmWeb3Service.onboard.walletSelect()
     }
 
-    DmmWeb3Service.notify = Notify({
-      dappId: '9171b34b-ab20-4982-b3d9-43c073657a88',
-      networkId: Number.parseInt(process.env.REACT_APP_NETWORK_ID || '4'),
-    });
+    if (!DmmWeb3Service.notify) {
+      DmmWeb3Service.notify = Notify({
+        dappId: '9171b34b-ab20-4982-b3d9-43c073657a88',
+        networkId: Number.parseInt(process.env.REACT_APP_NETWORK_ID || '4'),
+      });
+    }
+
+    await DmmWeb3Service.onboard.walletCheck()
+
+    return DmmWeb3Service.instance
+  }
+
+  static async ready() {
+    if (DmmWeb3Service.initiated) {
+      return DmmWeb3Service.instance
+    }
+    DmmWeb3Service.initiated = DmmWeb3Service.init()
+    return await DmmWeb3Service.initiated
   }
 
 }

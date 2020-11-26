@@ -26,7 +26,7 @@ class ERC20TokenService {
       const provider = new ethers.providers.Web3Provider(ethereum as any);
       this.contract = new ethers.Contract(address, IERC20, provider)
       const signer: any = provider.getSigner()
-      console.log({address, IERC20, signer, provider})
+
       if (signer) {
         this.contract.connect(signer)
       }
@@ -48,7 +48,6 @@ class ERC20TokenService {
   }
 
   async balanceOf(address: string) {
-    console.log("balancce")
     await this.ready()
     return this.contract.balanceOf(address)
   }

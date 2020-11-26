@@ -1,3 +1,4 @@
+import Big, { BigSource } from "big.js"
 import { TOKENS, TOKEN_DETAILS } from "consts"
 import { Erc20Token, ChainID } from "types"
 
@@ -37,3 +38,5 @@ export const repeatUntil = (task: Function, stoppingCondition: Function, interva
 
   setTimeout(job, interval)
 })
+
+export const formatNumber = (number: BigSource, decimals = 0, accuracy: number | undefined) => new Big(number).times(`1e-${decimals}`).toFixed(accuracy)

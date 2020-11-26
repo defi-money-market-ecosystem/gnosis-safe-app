@@ -11,9 +11,11 @@ import {
   safeTransactionConfirmed,
   safeTransactionRejected,
 } from "actions"
-import observerMiddleware from "middlewares/observerMiddleware"
 import useCallbackOnce from "hooks/useCallbackOnce"
+import observerMiddleware from "middlewares/observerMiddleware"
 import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
+import BalancesPanel from "components/Balances"
+import { Box } from "@material-ui/core"
 
 const Container = styled.form`
   margin-bottom: 2rem;
@@ -54,7 +56,10 @@ const App: React.FC = () => {
   return (
     <Container>
       <DmmContext.Provider value={contextValue}>
-        <SwapPanel />
+        <Box display="flex">
+          <SwapPanel />
+          <BalancesPanel />
+        </Box>
       </DmmContext.Provider>
     </Container>
   )

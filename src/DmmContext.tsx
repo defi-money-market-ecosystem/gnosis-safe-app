@@ -12,7 +12,6 @@ import { DmmTokenDetailsType } from "services/DMMTokenService"
 
 export interface AppState {
   tokens: Record<Erc20Token, Maybe<DmmTokenDetailsType>>
-  tokenKeys: Array<Erc20Token>
   loading: boolean
   selectedToken: Erc20Token
   safeInfo: Maybe<SafeInfo>
@@ -41,7 +40,6 @@ export const initialState: AppState = {
     USDC: null,
     USDT: null,
   },
-  tokenKeys: [],
   loading: true,
   selectedToken: "ETH",
   safeInfo: null,

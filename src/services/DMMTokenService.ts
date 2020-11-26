@@ -12,7 +12,7 @@ const RIKEBY_ADDRESSES = {
   LINK: '0x01BE23585060835E02B77ef475b0Cc51aA1e0709',
   USDC: '0xdD520698450DbAE6E0090d8138015923C120793f',
   ETH: '0x882259f77C452e83bDF1820aC950b0d6d915DCAd',
-  USDT: '0x'
+  USDT: undefined
 }
 
 export interface DmmTokenDetailsType extends TokenDetailsType {
@@ -152,7 +152,6 @@ class DmmTokenService {
   }
 
   static async balanceOf(dmmTokenAddress: string, account: string) {
-    console.log({b: "blanaceof", dmmTokenAddress, account})
     await DmmWeb3Service.ready()
     if(dmmTokenAddress === '0x') {
       return await DmmWeb3Service.instance.web3.eth.getBalance(account)

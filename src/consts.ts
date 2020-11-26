@@ -78,5 +78,3 @@ export const TOKEN_DETAILS = {
 const { ethereum } = window
 
 export const chainId = parseInt((ethereum as any)?.chainId)
-
-console.log({chainId})

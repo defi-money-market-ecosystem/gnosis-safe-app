@@ -47,7 +47,6 @@ class DmmWeb3Service {
 
   constructor() {
     const walletInterfaces: any = new BlockNativeWalletInterfaces({infuraApiKey});
-    console.log({ddd: DmmWeb3Service.onboard})
     this.onboard = DmmWeb3Service.onboard || Onboard({
       dappId: '9171b34b-ab20-4982-b3d9-43c073657a88',
       networkId: Number.parseInt(chainId+'' || '4'),
@@ -147,7 +146,6 @@ class DmmWeb3Service {
     }
 
     if (previousWallet) {
-      console.log("previous wallet")
       await DmmWeb3Service.onboard.walletSelect(previousWallet)
         .catch((error: any) => {
           console.error("Could not load previously cached wallet due to error: ", error);

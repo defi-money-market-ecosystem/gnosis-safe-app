@@ -18,26 +18,22 @@ const loadTokens = async (safeInfo: SafeInfo) => {
     CHAIN_ID_MAP[safeInfo.network]
   )
 
-  console.log("loading tokens")
-
   for (const key in tokens) {
-    console.log({ key })
     const token = tokens[key as Erc20Token]
 
     const balance =
       !!token.address &&
-      !!safeInfo.safeAddress &&
+      !!safeInfo.safeAddress ?
       (token.symbol === "ETH"
         ? ethers.utils.parseEther(safeInfo.ethBalance).toString()
         : await (await ERC20TokenService.getInstance(token.address)).balanceOf(
             safeInfo.safeAddress
           )
-      ).toString()
+      ).toString() : '0'
 
     const dmmBalance =
       !!token.dmmTokenAddress &&
       !!safeInfo.safeAddress &&
-      // token.symbol === "ETH" ? await DmmWeb3Service.instance.web3.eth.getBalance(safeInfo.safeAddress) :
       (await DmmTokenService.balanceOf(
         token.dmmTokenAddress,
         safeInfo.safeAddress
@@ -47,7 +43,6 @@ const loadTokens = async (safeInfo: SafeInfo) => {
     tokens[key as Erc20Token] = { ...token, balance, exchangeRate, dmmBalance }
   }
 
-  console.log({ tokens })
   return tokens
 }
 
@@ -55,13 +50,13 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
   action: Action
 ) => {
   const state = store.getState()
-  console.log({ action, state, where: "dataMiddleware" })
+
   switch (action.type) {
     case "SAFE_INFO_RECEIVED": {
       loadTokens(action.payload.safeInfo).then((tokens) =>
         store.dispatch({ type: "SET_TOKENS", payload: { tokens } })
       )
-      const { wallet } = store.getState()
+      const { wallet } = state
 
       if (wallet.status === "disconnected") {
         wallet.connect("injected").then(() => {
@@ -72,7 +67,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
       break
     }
     case "SAFE_TRANSACTION_CONFIRMED": {
-      const { safeInfo } = store.getState()
+      const { safeInfo } = state
 
       repeatUntil(
         async () =>
@@ -91,18 +86,17 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
       break
     }
     case "TRANSACTION_FAILED": {
-      console.log({ action })
       break
     }
     case "RELOAD": {
-      const { safeInfo } = store.getState()
+      const { safeInfo } = state
       loadTokens(safeInfo).then((tokens) =>
         store.dispatch({ type: "SET_TOKENS", payload: { tokens } })
       )
       break
     }
     case "MINT": {
-      const { tokens, safeInfo } = store.getState()
+      const { tokens, safeInfo } = state
       const { token, amount } = action.payload
       const amountBn = BigNumber.from(amount)
       const isEth = token === "ETH"
@@ -120,10 +114,6 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
               tokens[token].dmmTokenAddress
             )
 
-            console.log({
-              allowance: allowance.toString(),
-              token: tokens[token],
-            })
             if (!allowance.gte(amountBn)) {
               txs.push({
                 to: tokens[token].address,
@@ -146,18 +136,15 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
             data,
           })
 
-          console.log({ txs, instance, amount })
           if (txs.length) {
-
             gnosisSafeSdk.sendTransactions(txs)
           }
         }
       )
-
       break
     }
     case "REDEEM": {
-      const { tokens } = store.getState()
+      const { tokens } = state
       const { token, amount } = action.payload
       const isEth = token === "ETH"
       const abi = isEth ? DmmEther : DmmToken

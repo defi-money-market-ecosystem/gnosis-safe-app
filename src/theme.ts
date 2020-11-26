@@ -13,7 +13,14 @@ const theme = createMuiTheme({
       contrastText: '#ffffff'
     },
     text: {
-      primary:'#0a2a5a'
+      primary:'#0a2a5a',
+      secondary: '#c1c5d0'
+    },
+    error: {
+      main: '#ff2972'
+    },
+    action: {
+      disabledBackground: 'rgba(50,124,203,.3)'
     }
   },
   typography: {

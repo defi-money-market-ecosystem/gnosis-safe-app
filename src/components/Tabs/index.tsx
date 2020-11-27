@@ -1,8 +1,10 @@
 import React from "react"
 import Tabs from "@material-ui/core/Tabs"
-import { Tab, Theme, withStyles } from "@material-ui/core"
+import { fade, Tab, Theme, withStyles } from "@material-ui/core"
 
 export const StyledTab = withStyles((theme: Theme) => ({
+  selected: {},
+  disabled: {},
   root: {
     minWidth: 0,
     minHeight: 0,
@@ -12,7 +14,11 @@ export const StyledTab = withStyles((theme: Theme) => ({
     margin: "0 6px",
   },
   textColorPrimary: {
+    color: fade(theme.palette.text.primary, 0.7),
     "&$selected": {
+      color: theme.palette.text.primary,
+    },
+    "&$disabled": {
       color: theme.palette.text.primary,
     },
   },

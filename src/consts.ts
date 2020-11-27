@@ -5,6 +5,11 @@ import usdcIcon from "./images/asset_USDC.svg"
 import usdtIcon from "./images/asset_USDT.svg"
 import { Erc20Token, MToken } from "types"
 
+export const NETWORK_MAP: Record<number, string> = {
+  1: 'mainnet',
+  4: 'rinkeby'
+}
+
 export const CHAIN_ID_MAP: Record<string, ChainID> = {
   'mainnet': 1,
   'rinkeby': 4
@@ -77,4 +82,8 @@ export const TOKEN_DETAILS = {
 
 const { ethereum } = window
 
-export const chainId = parseInt((ethereum as any)?.chainId)
+export const chainId: ChainID = parseInt((ethereum as any)?.chainId) === 1 ? 1 : 4
+
+export const interestPerSecond = 0.0000001981862
+
+export const DECIMAL_PLACES = 8

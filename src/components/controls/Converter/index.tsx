@@ -2,7 +2,19 @@ import React from "react"
 import { Box, useTheme } from "@material-ui/core"
 import AmountInput from "components/controls/AmountInput"
 import ArrowForward from "@material-ui/icons/ArrowForward"
-import Big from "big.js"
+import Big, { BigSource } from "big.js"
+import { DECIMAL_PLACES } from "consts"
+
+const convert = (
+  amount: BigSource = 0,
+  exchangeRate: BigSource = 1,
+  decimals: number = 0,
+  reverse = false
+) =>
+  new Big(amount || 0)
+    [reverse ? "times" : "div"](exchangeRate)
+    .round(DECIMAL_PLACES - decimals, reverse ? 3 : 0)
+    .toFixed()
 
 interface ConverterPropsType {
   tokens: Array<string>
@@ -31,30 +43,23 @@ const Converter = (props: ConverterPropsType) => {
     onMaxButtonClick,
   } = props
 
-  const rightAmount =
-    !exchangeRate.eq(0) && leftValue !== ""
-      ? new Big(leftValue || "0").div(exchangeRate).toFixed(0)
-      : ""
+  const rightAmount = convert(leftValue, exchangeRate, decimals)
 
-  const handleLeftAmountChange = (value: string = "0") => {
-    const right =
-      !exchangeRate.eq(0) && value !== ""
-        ? new Big(value || "0").div(exchangeRate).toFixed(0)
-        : ""
-    onAmountChange({ left: value, right })
-  }
+  const handleLeftAmountChange = (value: string = "0") =>
+    onAmountChange({
+      left: value,
+      right: convert(value, exchangeRate, decimals),
+    })
 
   const handleRightAmountChange = (value: string) => {
     if (value === rightAmount) {
       return
     }
 
-    const left =
-      !exchangeRate.eq(0) && value !== ""
-        ? new Big(value).times(exchangeRate).toFixed(0)
-        : ""
-
-    onAmountChange({ left, right: value })
+    onAmountChange({
+      left: convert(value, exchangeRate, decimals, true),
+      right: value,
+    })
   }
 
   return (

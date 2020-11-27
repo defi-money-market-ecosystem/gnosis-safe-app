@@ -1,5 +1,5 @@
 import Big, { BigSource } from "big.js"
-import { TOKENS, TOKEN_DETAILS } from "consts"
+import { NETWORK_MAP, TOKENS, TOKEN_DETAILS, chainId } from "consts"
 import { Erc20Token, ChainID } from "types"
 
 export const getInfuraUrl = (network: string) =>
@@ -16,6 +16,12 @@ export const getTokenDetails = (chainId: ChainID, id: Erc20Token) => {
     ...TOKEN_DETAILS[id],
     address: id !== "ETH" ? tokensByChain[id] : "0x",
   }
+}
+
+export const getOracleAddressByNetwork = () => {
+  const envName = `REACT_APP_ORACLE_${(NETWORK_MAP[chainId] as string).toUpperCase()}`
+
+  return process.env[envName] as string
 }
 
 export const repeatUntil = (task: Function, stoppingCondition: Function, interval = 2000, maxRepeats = 10) => new Promise((resolve, reject) => {

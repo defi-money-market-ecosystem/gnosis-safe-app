@@ -8,7 +8,9 @@ import { map } from "lodash"
 
 export default connect<SwapPropsType>(
   ({ tokens, selectedToken, safeInfo, loading }) => ({
-    tokenKeys: map(tokens, "symbol").sort(),
+    tokenKeys: map(tokens, "symbol")
+      .filter((t) => !!t)
+      .sort(),
     tokens,
     tokenPair:
       selectedToken && tokens[selectedToken]

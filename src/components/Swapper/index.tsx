@@ -6,6 +6,7 @@ import Converter from "components/controls/Converter"
 import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
 import { useActionListener } from "middlewares/observerMiddleware"
 import { DmmTokenDetailsType } from "services/DMMTokenService"
+import { DECIMAL_PLACES } from "consts"
 
 const HelperText = styled(Typography)({
   textAlign: "center",
@@ -52,15 +53,21 @@ const Swap = ({
 
   useActionListener(["SAFE_TRANSACTION_CONFIRMED"], resetAmount)
 
+  const bigAmount = new Big(amount || 0)
+
   const token = selectedToken && tokens[selectedToken]
 
-  const zeroAmount = amount === "" || amount === "0"
+  const zeroAmount = bigAmount.eq(0)
 
-  const insufficientBalance =
-    !zeroAmount && new Big(amount || 0).gt(balance as string)
+  const insufficientBalance = !zeroAmount && bigAmount.gt(balance as string)
 
-  const belowMinimum =
-    !zeroAmount && new Big(amount || 0).lt(new Big(`1e${decimals || 0}`))
+  const belowMinimum = !zeroAmount && bigAmount.lt(`1e${decimals || 0}`)
+
+  const extraDecimals =
+    bigAmount
+      .times(`1e-${decimals || 0}`)
+      .toNumber()
+      .countDecimals() > Math.min(decimals, DECIMAL_PLACES)
 
   const handleTokenChange = (
     e: React.ChangeEvent<{ name?: string | undefined; value: unknown }>
@@ -98,7 +105,8 @@ const Swap = ({
       />
       <Typography color="error" variant="subtitle2" style={{ height: 21 }}>
         {(!!belowMinimum && "Must be >= 1") ||
-          (!!insufficientBalance && "Insufficient balance")}
+          (!!insufficientBalance && "Insufficient balance") ||
+          (!!extraDecimals && `Must only have up to ${decimals} decimals`)}
       </Typography>
       <Button
         color="primary"

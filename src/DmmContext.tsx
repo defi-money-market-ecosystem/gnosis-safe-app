@@ -16,6 +16,7 @@ export interface AppState {
   selectedToken: Erc20Token
   safeInfo: Maybe<SafeInfo>
   wallet: Maybe<Wallet<any>>
+  ethPrice: string
 }
 
 export interface Action {
@@ -44,6 +45,7 @@ export const initialState: AppState = {
   selectedToken: "ETH",
   safeInfo: null,
   wallet: null,
+  ethPrice: "0",
 }
 
 const DmmContext = createContext<DmmContextType>({

@@ -12,6 +12,7 @@ import { BigNumber, ethers } from "ethers"
 import ERC20TokenService from "services/ERC20TokenService"
 import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
 import { reload, transactionConfirmed, transactionFailed } from "actions"
+import Oracle from "services/Oracle"
 
 const loadTokens = async (safeInfo: SafeInfo) => {
   const tokens = await DmmTokenService.getDmmTokens(
@@ -22,14 +23,14 @@ const loadTokens = async (safeInfo: SafeInfo) => {
     const token = tokens[key as Erc20Token]
 
     const balance =
-      !!token.address &&
-      !!safeInfo.safeAddress ?
-      (token.symbol === "ETH"
-        ? ethers.utils.parseEther(safeInfo.ethBalance).toString()
-        : await (await ERC20TokenService.getInstance(token.address)).balanceOf(
-            safeInfo.safeAddress
-          )
-      ).toString() : '0'
+      !!token.address && !!safeInfo.safeAddress
+        ? (token.symbol === "ETH"
+            ? ethers.utils.parseEther(safeInfo.ethBalance).toString()
+            : await (
+                await ERC20TokenService.getInstance(token.address)
+              ).balanceOf(safeInfo.safeAddress)
+          ).toString()
+        : "0"
 
     const dmmBalance =
       !!token.dmmTokenAddress &&
@@ -53,6 +54,14 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
 
   switch (action.type) {
     case "SAFE_INFO_RECEIVED": {
+      Oracle.getEthPrice()
+        .then((price) =>
+          store.dispatch({
+            type: "SET_ETH_PRICE",
+            payload: { price: price.toString() },
+          })
+        )
+
       loadTokens(action.payload.safeInfo).then((tokens) =>
         store.dispatch({ type: "SET_TOKENS", payload: { tokens } })
       )
@@ -117,7 +126,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
             if (!allowance.gte(amountBn)) {
               txs.push({
                 to: tokens[token].address,
-                value: '0',
+                value: "0",
                 data: erc20TokenContract.interface.encodeFunctionData(
                   "approve",
                   [tokens[token].dmmTokenAddress, amountBn]
@@ -132,7 +141,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
 
           txs.push({
             to: tokens[token].dmmTokenAddress,
-            value: isEth ? amount : '0',
+            value: isEth ? amount : "0",
             data,
           })
 

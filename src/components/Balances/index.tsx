@@ -1,5 +1,5 @@
 import React from "react"
-import { Box, Typography } from "@material-ui/core"
+import { Box, CircularProgress, Typography } from "@material-ui/core"
 import { Erc20Token, MToken } from "types"
 import { connect } from "DmmContext"
 import Panel from "components/Panel"
@@ -8,8 +8,9 @@ import { formatNumber } from "utils"
 import NumberUtil from "utils/NumberUtil"
 import styled from "styled-components"
 import StyledTabs, { StyledTab } from "components/Tabs"
+import { interestPerSecond } from "consts"
 
-const TokenLine = styled.div`
+const UpperLine = styled.div`
   width: 100%;
   border-bottom: 1px solid #e2e2e2;
   display: flex;
@@ -18,14 +19,13 @@ const TokenLine = styled.div`
   margin-bottom: 6px;
 `
 
-const DmmTokenLine = styled.div`
+const LowerLine = styled.div`
   width: 100%;
   display: flex;
   justify-content: space-between;
   padding-bottom: 6px;
   margin-bottom: 6px;
 `
-
 interface Balance {
   token: Erc20Token
   dmmToken: MToken
@@ -35,13 +35,28 @@ interface Balance {
 }
 interface BalancesPanelPropsType {
   balances: Array<Balance>
+  totalTokens: string
+  totalMTokens: string
+  dailyInterest: string
+  loading: boolean
 }
 
-const BalancesPanel = ({ balances }: BalancesPanelPropsType) => {
+const BalancesPanel = ({
+  balances,
+  totalTokens,
+  totalMTokens,
+  dailyInterest,
+  loading,
+}: BalancesPanelPropsType) => {
   return (
     <Panel>
       <StyledTabs value={0} indicatorSize={50} textColor="primary">
-        <StyledTab label="Balances" />
+        <StyledTab
+          label={
+            <div>Balances {loading && <CircularProgress size={20} />}</div>
+          }
+          disabled
+        />
       </StyledTabs>
       <Typography component="div" variant="body1" color="textPrimary">
         <Box m={40} fontWeight={100}>
@@ -49,33 +64,49 @@ const BalancesPanel = ({ balances }: BalancesPanelPropsType) => {
             ({ token, dmmToken, balance, dmmBalance, convertedDmmBalance }) => {
               return (
                 <div key={token}>
-                  <TokenLine>
+                  <UpperLine>
                     <span>{token}</span>
                     <Typography>{formatNumber(balance || 0, 0, 8)}</Typography>
-                  </TokenLine>
-                  <DmmTokenLine>
+                  </UpperLine>
+                  <LowerLine>
                     <span>{dmmToken}</span>
                     <div>
-                      <span>{formatNumber(dmmBalance || 0, 0, 8)}</span>{" "}
+                      <Typography component="span">
+                        {formatNumber(dmmBalance || 0, 0, 8)}
+                      </Typography>{" "}
                       <Typography component="span" color="textSecondary">
                         ({formatNumber(convertedDmmBalance || 0, 0, 8)} {token})
                       </Typography>
                     </div>
-                  </DmmTokenLine>
+                  </LowerLine>
                 </div>
               )
             }
           )}
+          <div>
+            <UpperLine>
+              <span>Total tokens (USD)</span>
+              <Typography>${formatNumber(totalTokens || 0, 0, 2)}</Typography>
+            </UpperLine>
+            <UpperLine>
+              <span>Total mTokens (USD)</span>
+              <Typography>${formatNumber(totalMTokens || 0, 0, 2)}</Typography>
+            </UpperLine>
+            <LowerLine>
+              <span>Daily interest (USD)</span>
+              <Typography>${formatNumber(dailyInterest || 0, 0, 2)}</Typography>
+            </LowerLine>
+          </div>
         </Box>
       </Typography>
     </Panel>
   )
 }
 
-export default connect<BalancesPanelPropsType>(({ tokens }) => ({
-  balances: Object.keys(tokens)
-    .sort()
-    .map((key) => {
+export default connect<BalancesPanelPropsType>(
+  ({ tokens, ethPrice, loading }) => {
+    const keys = Object.keys(tokens).sort()
+    const balances = keys.map((key) => {
       const {
         dmmTokenSymbol = `m${key}`,
         balance = "0.00",
@@ -94,5 +125,40 @@ export default connect<BalancesPanelPropsType>(({ tokens }) => ({
           .div(NumberUtil._1)
           .toFixed(),
       }
-    }),
-}))(BalancesPanel)
+    })
+
+    const [totalTokens, totalMTokens] = balances.reduce(
+      (acc, { token: key, balance, convertedDmmBalance }) => {
+        const amountTokens =
+          key === "ETH"
+            ? new Big(balance || 0)
+                .times(ethPrice || 1)
+                .times(`1e-8`)
+                .toString()
+            : balance
+        const amountMTokens =
+          key === "ETH"
+            ? new Big(convertedDmmBalance || 0)
+                .times(ethPrice || 1)
+                .times(`1e-8`)
+                .toString()
+            : convertedDmmBalance
+        return [acc[0].plus(amountTokens), acc[1].plus(amountMTokens)]
+      },
+      [new Big(0), new Big(0)]
+    )
+
+    const dailyInterest = new Big(totalMTokens)
+      .times(interestPerSecond)
+      .times(24 * 60 * 60)
+      .toFixed()
+
+    return {
+      balances,
+      totalTokens: totalTokens.toFixed(),
+      totalMTokens: totalMTokens.toFixed(),
+      dailyInterest,
+      loading,
+    }
+  }
+)(BalancesPanel)

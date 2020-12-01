@@ -1,11 +1,19 @@
+import IERC20 from 'abi/IERC20.json'
 import { MToken, Erc20Token, ChainID } from "types"
 import { REVERSE_M_TOKEN_MAP, TOKEN_DETAILS, TokenDetailsType, TOKENS } from "consts"
-import DmmToken from "abi/DmmToken.json"
 import DmmWeb3Service from "./DmmWeb3Service"
 import NumberUtil from "utils/NumberUtil"
 import { Contract } from "ethers"
 
 const baseUrl = "https://api.defimoneymarket.com"
+
+const RIKEBY_ADDRESSES = {
+  DAI: '0x3d17163F3eB98A8795784A7bd8c48Dd1cEF8b166',
+  LINK: '0x01BE23585060835E02B77ef475b0Cc51aA1e0709',
+  USDC: '0xdD520698450DbAE6E0090d8138015923C120793f',
+  ETH: '0x882259f77C452e83bDF1820aC950b0d6d915DCAd',
+  USDT: undefined
+}
 
 export interface DmmTokenDetailsType extends TokenDetailsType {
   dmmTokenId: string
@@ -13,6 +21,7 @@ export interface DmmTokenDetailsType extends TokenDetailsType {
   dmmTokenAddress: string
   imageUrl: string
   address: string
+  dmmBalance?: string
 }
 
 class DmmTokenService {
@@ -32,7 +41,7 @@ class DmmTokenService {
         [erc20Token]: {
           dmmTokenId: token["dmm_token_id"],
           dmmTokenSymbol: token["symbol"],
-          dmmTokenAddress: token["dmm_token_address"],
+          dmmTokenAddress: chainId === 4 ? RIKEBY_ADDRESSES[erc20Token] : token["dmm_token_address"],
           imageUrl: token["image_url"],
           address: TOKENS[chainId][erc20Token],
           ...TOKEN_DETAILS[erc20Token],
@@ -110,8 +119,8 @@ class DmmTokenService {
 
   static dmmTokenContract(dmmTokenAddress: string) {
     if(!DmmTokenService.dmmTokenContracts[dmmTokenAddress]) {
-      DmmTokenService.dmmTokenContracts[dmmTokenAddress] = DmmWeb3Service.instance.web3.eth.Contract(
-        DmmToken,
+      DmmTokenService.dmmTokenContracts[dmmTokenAddress] = new DmmWeb3Service.instance.web3.eth.Contract(
+        IERC20,
         dmmTokenAddress
       )
     }
@@ -119,24 +128,36 @@ class DmmTokenService {
     return DmmTokenService.dmmTokenContracts[dmmTokenAddress]
   }
 
-  static mint(dmmTokenAddress: string, owner: string, underlyingAmount: any) {
+  static async mint(dmmTokenAddress: string, owner: string, underlyingAmount: any) {
+    await DmmWeb3Service.ready()
     return DmmTokenService.dmmTokenContract(dmmTokenAddress).methods
       .mint(underlyingAmount.toString(10))
       .send({ from: owner })
   }
 
-  static mintViaEther(
+  static async mintViaEther(
     dmmTokenAddress: string,
     owner: string,
     underlyingAmount: any
   ) {
+    await DmmWeb3Service.ready()
     return DmmTokenService.dmmTokenContract(dmmTokenAddress).methods
       .mintViaEther()
       .send({ from: owner, value: underlyingAmount.toString(10) })
   }
 
-  static redeem(dmmTokenAddress: string, owner: string, dmmAmount: any) {
+  static async redeem(dmmTokenAddress: string, owner: string, dmmAmount: any) {
+    await DmmWeb3Service.ready()
     return DmmTokenService.dmmTokenContract(dmmTokenAddress).methods.redeem(dmmAmount.toString(10)).send({ from: owner })
+  }
+
+  static async balanceOf(dmmTokenAddress: string, account: string) {
+    await DmmWeb3Service.ready()
+    if(dmmTokenAddress === '0x') {
+      return await DmmWeb3Service.instance.web3.eth.getBalance(account)
+    }
+    //return '0'
+    return DmmTokenService.dmmTokenContract(dmmTokenAddress).methods.balanceOf(account).call()
   }
 }
 

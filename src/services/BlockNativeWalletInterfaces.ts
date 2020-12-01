@@ -53,7 +53,7 @@ class BlockNativeWalletInterfaces {
                 isLoadingObj.reject = reject;
               }),
             };
-            const accounts = await provider.enable()
+            const accounts = await provider?.send('eth_requestAccounts')
               .then(accounts => {
                 if (isLoadingObj.resolve) {
                   isLoadingObj.resolve(true);

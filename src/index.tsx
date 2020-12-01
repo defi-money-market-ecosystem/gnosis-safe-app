@@ -8,7 +8,7 @@ import App from "./App"
 import { MuiThemeProvider, StylesProvider } from "@material-ui/core"
 import muiTheme from "./theme"
 import { UseWalletProvider } from "use-wallet"
-import { CHAIN_ID } from "consts"
+import { chainId } from "consts"
 
 ReactDOM.render(
   <StylesProvider injectFirst>
@@ -23,7 +23,7 @@ ReactDOM.render(
             </>
           }
         >
-          <UseWalletProvider chainId={CHAIN_ID}>
+          <UseWalletProvider chainId={chainId || 1}>
             <App />
           </UseWalletProvider>
         </SafeProvider>

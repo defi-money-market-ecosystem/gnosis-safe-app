@@ -2,11 +2,15 @@
 
 ## Getting Started
 
-Install dependencies and start a local dev server.
+Install dependencies and set up `.env` variables as in `.env.sample`.
 
 ```
 yarn install
+
 cp .env.sample .env
+.
+.
+.
 yarn start
 ```
 
@@ -21,4 +25,3 @@ Then:
 - Go to Apps -> Manage Apps -> Add Custom App
 - Paste your localhost URL, default is https://localhost:3000/
 - You should see Safe App Starter as a new app
-- Develop your app from there

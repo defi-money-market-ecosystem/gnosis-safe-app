@@ -1,5 +1,5 @@
 import IERC20 from 'abi/IERC20.json'
-import ethers from 'ethers';
+import {ethers} from 'ethers';
 
 class ERC20TokenService {
   static instances: Record<string, ERC20TokenService> = {}
@@ -21,12 +21,15 @@ class ERC20TokenService {
         reject(new Error('MetaMask is not found'))
       }
 
-      await ethereum?.enable()
+      await ethereum?.send('eth_requestAccounts')
       
       const provider = new ethers.providers.Web3Provider(ethereum as any);
+      this.contract = new ethers.Contract(address, IERC20, provider)
       const signer: any = provider.getSigner()
 
-      this.contract = new ethers.Contract(this.address, IERC20, signer || provider)
+      if (signer) {
+        this.contract.connect(signer)
+      }
 
       resolve(this)
     })
@@ -45,6 +48,7 @@ class ERC20TokenService {
   }
 
   async balanceOf(address: string) {
+    await this.ready()
     return this.contract.balanceOf(address)
   }
 }

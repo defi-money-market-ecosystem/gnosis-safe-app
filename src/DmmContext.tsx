@@ -8,15 +8,15 @@ import React, {
 import { Erc20Token, Maybe } from "./types"
 import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
 import { Wallet } from "use-wallet"
-import { TokenDetailsType } from "consts"
+import { DmmTokenDetailsType } from "services/DMMTokenService"
 
 export interface AppState {
-  tokens: Record<Erc20Token, Maybe<TokenDetailsType>>
-  tokenKeys: Array<Erc20Token>
+  tokens: Record<Erc20Token, Maybe<DmmTokenDetailsType>>
   loading: boolean
   selectedToken: Erc20Token
   safeInfo: Maybe<SafeInfo>
   wallet: Maybe<Wallet<any>>
+  ethPrice: string
 }
 
 export interface Action {
@@ -41,11 +41,11 @@ export const initialState: AppState = {
     USDC: null,
     USDT: null,
   },
-  tokenKeys: [],
   loading: true,
   selectedToken: "ETH",
   safeInfo: null,
   wallet: null,
+  ethPrice: "0",
 }
 
 const DmmContext = createContext<DmmContextType>({

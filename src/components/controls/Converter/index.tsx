@@ -13,7 +13,7 @@ const convert = (
 ) =>
   new Big(amount || 0)
     [reverse ? "times" : "div"](exchangeRate)
-    .round(DECIMAL_PLACES - decimals, reverse ? 3 : 0)
+    .round(-Math.abs(DECIMAL_PLACES - decimals), reverse ? 3 : 0)
     .toFixed()
 
 interface ConverterPropsType {

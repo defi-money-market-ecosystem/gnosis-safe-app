@@ -24,7 +24,7 @@ const loadTokens = async (safeInfo: SafeInfo) => {
 
     const balance =
       !!token.address && !!safeInfo.safeAddress
-        ? (token.symbol === "ETH"
+        ? (token.address === "0x"
             ? ethers.utils.parseEther(safeInfo.ethBalance).toString()
             : await (
                 await ERC20TokenService.getInstance(token.address)
@@ -40,7 +40,7 @@ const loadTokens = async (safeInfo: SafeInfo) => {
         safeInfo.safeAddress
       ))
 
-    const exchangeRate = await DmmTokenService.getExchangeRate(token.dmmTokenId)
+    const exchangeRate = await DmmTokenService.getExchangeRate(token.dmmTokenAddress)
     tokens[key as Erc20Token] = { ...token, balance, exchangeRate, dmmBalance }
   }
 
@@ -108,7 +108,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
       const { tokens, safeInfo } = state
       const { token, amount } = action.payload
       const amountBn = BigNumber.from(amount)
-      const isEth = token === "ETH"
+      const isEth = tokens[token].address === "0x"
       const abi = isEth ? DmmEther : DmmToken
 
       Contract.getInstance(tokens[token].dmmTokenAddress, abi).then(
@@ -119,8 +119,8 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
               await ERC20TokenService.getInstance(tokens[token].address)
             ).contract
             const allowance = await erc20TokenContract.allowance(
-              safeInfo.safeAddress,
-              tokens[token].dmmTokenAddress
+              safeInfo.safeAddress.toLocaleLowerCase(),
+              tokens[token].dmmTokenAddress.toLocaleLowerCase()
             )
 
             if (!allowance.gte(amountBn)) {
@@ -155,7 +155,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
     case "REDEEM": {
       const { tokens } = state
       const { token, amount } = action.payload
-      const isEth = token === "ETH"
+      const isEth = tokens[token].address === "0x"
       const abi = isEth ? DmmEther : DmmToken
 
       Contract.getInstance(tokens[token].dmmTokenAddress, abi).then(

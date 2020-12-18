@@ -119,12 +119,14 @@ export default connect<BalancesPanelPropsType>(
         exchangeRate = 0,
       } = tokens[key as Erc20Token] || {}
 
+      const bigDmmBalance = new Big(dmmBalance || 0).times(`1e-${decimals}`)
+
       return {
         token: key,
         dmmToken: dmmTokenSymbol,
         balance: new Big(balance || 0).times(`1e-${decimals}`).toFixed(),
-        dmmBalance,
-        convertedDmmBalance: new Big(dmmBalance || 0)
+        dmmBalance: bigDmmBalance.toFixed(),
+        convertedDmmBalance: bigDmmBalance
           .times(exchangeRate || 1)
           .div(NumberUtil._1)
           .toFixed(),

@@ -24,6 +24,7 @@ export default connect<SwapPropsType>(
       NumberUtil._1
     ),
     decimals: tokens?.[selectedToken]?.decimals || 18,
+    minAmount: `1e${tokens?.[selectedToken]?.decimals || 18}`,
     description: "Mint your tokens into mTokens so it can earn interest.",
     actionLabel: "Mint",
   }),

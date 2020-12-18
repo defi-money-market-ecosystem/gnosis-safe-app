@@ -24,6 +24,12 @@ export const getOracleAddressByNetwork = () => {
   return process.env[envName] as string
 }
 
+export const getDmmControllerAddress = () => {
+  const envName = `REACT_APP_DMM_CONTROLLER_${(NETWORK_MAP[chainId] as string).toUpperCase()}`
+
+  return process.env[envName] as string
+}
+
 export const repeatUntil = (task: Function, stoppingCondition: Function, interval = 2000, maxRepeats = 10) => new Promise((resolve, reject) => {
   let repeat = 0
 

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react"
 import { Box, Button, styled, Typography } from "@material-ui/core"
 import { Erc20Token, Maybe, MToken } from "types"
-import Big from "big.js"
+import Big, { BigSource } from "big.js"
 import Converter from "components/controls/Converter"
 import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
 import { useActionListener } from "middlewares/observerMiddleware"
@@ -24,6 +24,7 @@ export interface SwapPropsType {
   balance: string
   exchangeRateBig: Big
   decimals: number
+  minAmount: BigSource
   reload: () => void
   changeToken: (token: string) => void
   action: (amount: string) => void
@@ -41,6 +42,7 @@ const Swap = ({
   balance,
   exchangeRateBig,
   decimals,
+  minAmount = 0,
   reload,
   changeToken,
   action,
@@ -61,25 +63,28 @@ const Swap = ({
 
   const insufficientBalance = !zeroAmount && bigAmount.gt(balance as string)
 
-  const belowMinimum = !zeroAmount && bigAmount.lt(`1e${decimals || 0}`)
+  const belowMinimum = !zeroAmount && bigAmount.lt(minAmount)
+
+  const maxDecimals = Math.min(decimals, DECIMAL_PLACES)
 
   const extraDecimals =
     bigAmount
       .times(`1e-${decimals || 0}`)
       .toNumber()
-      .countDecimals() > Math.min(decimals, DECIMAL_PLACES)
+      .countDecimals() > maxDecimals
 
   const handleTokenChange = (
     e: React.ChangeEvent<{ name?: string | undefined; value: unknown }>
   ) => {
     e.preventDefault()
-    setAmount("")
+    setAmount("0")
     changeToken(e.target.value as string)
   }
 
   const handleLeftAmountChange = (value: string = "0") => setAmount(value)
 
-  const handleMaxButtonClick = () => setAmount((balance as string) || "0")
+  const handleMaxButtonClick = () =>
+    setAmount(new Big(balance || 0).round(maxDecimals - decimals, 0).toString())
 
   const handleButtonClick = () => action(amount)
 
@@ -106,7 +111,7 @@ const Swap = ({
       <Typography color="error" variant="subtitle2" style={{ height: 21 }}>
         {(!!belowMinimum && "Must be >= 1") ||
           (!!insufficientBalance && "Insufficient balance") ||
-          (!!extraDecimals && `Must only have up to ${decimals} decimals`)}
+          (!!extraDecimals && `Must only have up to ${maxDecimals} decimals`)}
       </Typography>
       <Button
         color="primary"

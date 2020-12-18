@@ -3997,10 +3997,10 @@ bech32@1.1.4:
   resolved "https://registry.yarnpkg.com/bech32/-/bech32-1.1.4.tgz#e38c9f37bf179b8eb16ae3a772b40c356d4832e9"
   integrity sha512-s0IrSOzLlbvX7yp4WBfPITzpAU8sqQcpsmwXDiKwrG4r491vwCO/XpejasRNl0piBMe/DvP4Tz0mIS/X1DPJBQ==
 
-big-number-input@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/big-number-input/-/big-number-input-1.0.2.tgz#dcea0caf764ed49e2ef18caeabc12722c85048bf"
-  integrity sha512-eeIFLcNQosyPs5J3bpdBtWqhupIaHtrBUyRr1+C40SZhttTV9KhOhL2xI5ZtXjyzM21qqBDOWVPGbeicYBFgGw==
+big-number-input@1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/big-number-input/-/big-number-input-1.0.3.tgz#8d37b8b949572f60476e0a75a3a6a54bcf410e3f"
+  integrity sha512-t0BZ9+t9T8DdMpUYgXk+CxiGGPOMPRuy8iGcOxyTD1R1sw21R4UNyQJWnuhufRhp+imv83Sl0CP2XzQCcqSYYw==
   dependencies:
     "@ethersproject/units" "^5.0.0-beta.132"
 

@@ -19,9 +19,6 @@ const TokenSelect = styled(Select)({
     height: "100%",
     boxSizing: "border-box",
   },
-  "&$underline": {
-    border: "none",
-  },
 })
 
 const StyledInput = styled(Input)({

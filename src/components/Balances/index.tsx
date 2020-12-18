@@ -35,16 +35,16 @@ interface Balance {
 }
 interface BalancesPanelPropsType {
   balances: Array<Balance>
-  totalTokens: string
-  totalMTokens: string
+  totalAvailableUsd: string
+  totalDepositedUsd: string
   dailyInterest: string
   loading: boolean
 }
 
 const BalancesPanel = ({
   balances,
-  totalTokens,
-  totalMTokens,
+  totalAvailableUsd,
+  totalDepositedUsd,
   dailyInterest,
   loading,
 }: BalancesPanelPropsType) => {
@@ -85,12 +85,16 @@ const BalancesPanel = ({
           )}
           <div>
             <UpperLine>
-              <span>Total tokens (USD)</span>
-              <Typography>${formatNumber(totalTokens || 0, 0, 2)}</Typography>
+              <span>Total available (USD)</span>
+              <Typography>
+                ${formatNumber(totalAvailableUsd || 0, 0, 2)}
+              </Typography>
             </UpperLine>
             <UpperLine>
-              <span>Total mTokens (USD)</span>
-              <Typography>${formatNumber(totalMTokens || 0, 0, 2)}</Typography>
+              <span>Total deposited (USD)</span>
+              <Typography>
+                ${formatNumber(totalDepositedUsd || 0, 0, 2)}
+              </Typography>
             </UpperLine>
             <LowerLine>
               <span>Daily interest (USD)</span>
@@ -115,19 +119,21 @@ export default connect<BalancesPanelPropsType>(
         exchangeRate = 0,
       } = tokens[key as Erc20Token] || {}
 
+      const bigDmmBalance = new Big(dmmBalance || 0).times(`1e-${decimals}`)
+
       return {
         token: key,
         dmmToken: dmmTokenSymbol,
         balance: new Big(balance || 0).times(`1e-${decimals}`).toFixed(),
-        dmmBalance,
-        convertedDmmBalance: new Big(dmmBalance || 0)
+        dmmBalance: bigDmmBalance.toFixed(),
+        convertedDmmBalance: bigDmmBalance
           .times(exchangeRate || 1)
           .div(NumberUtil._1)
           .toFixed(),
       }
     })
 
-    const [totalTokens, totalMTokens] = balances.reduce(
+    const [totalAvailableUsd, totalDepositedUsd] = balances.reduce(
       (acc, { token: key, balance, convertedDmmBalance }) => {
         const amountTokens =
           key === "ETH"
@@ -148,15 +154,15 @@ export default connect<BalancesPanelPropsType>(
       [new Big(0), new Big(0)]
     )
 
-    const dailyInterest = new Big(totalMTokens)
+    const dailyInterest = new Big(totalDepositedUsd)
       .times(interestPerSecond)
       .times(24 * 60 * 60)
       .toFixed()
 
     return {
       balances,
-      totalTokens: totalTokens.toFixed(),
-      totalMTokens: totalMTokens.toFixed(),
+      totalAvailableUsd: totalAvailableUsd.toFixed(),
+      totalDepositedUsd: totalDepositedUsd.toFixed(),
       dailyInterest,
       loading,
     }

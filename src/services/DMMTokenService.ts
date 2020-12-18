@@ -1,18 +1,20 @@
 import IERC20 from 'abi/IERC20.json'
+import DmmController from 'abi/DmmController.json'
 import { MToken, Erc20Token, ChainID } from "types"
 import { REVERSE_M_TOKEN_MAP, TOKEN_DETAILS, TokenDetailsType, TOKENS } from "consts"
 import DmmWeb3Service from "./DmmWeb3Service"
 import NumberUtil from "utils/NumberUtil"
 import { Contract } from "ethers"
+import { getDmmControllerAddress } from 'utils'
 
 const baseUrl = "https://api.defimoneymarket.com"
 
 const RIKEBY_ADDRESSES = {
-  DAI: '0x3d17163F3eB98A8795784A7bd8c48Dd1cEF8b166',
-  LINK: '0x01BE23585060835E02B77ef475b0Cc51aA1e0709',
-  USDC: '0xdD520698450DbAE6E0090d8138015923C120793f',
-  ETH: '0x882259f77C452e83bDF1820aC950b0d6d915DCAd',
-  USDT: undefined
+  DAI: '0x2e15d1ac4c6e8b5c8dad543a98abbf058838d233',
+  LINK: '',
+  USDC: '0xd7a3d3e09c48dd0c15353728084ceab9ae4463fb',
+  ETH: '0xf81766c9b2750f31d79fe2a41b4a189f253c7204',
+  USDT: ''
 }
 
 export interface DmmTokenDetailsType extends TokenDetailsType {
@@ -26,6 +28,7 @@ export interface DmmTokenDetailsType extends TokenDetailsType {
 
 class DmmTokenService {
   static dmmTokenContracts: Record<string, Contract> = {}
+  static dmmControllerContracts: Record<string, Contract> = {}
 
   static async getDmmTokens(chainId: ChainID): Promise<Record<Erc20Token, DmmTokenDetailsType>> {
     const response = await fetch(`${baseUrl}/v1/dmm/tokens`, {
@@ -36,26 +39,24 @@ class DmmTokenService {
       const erc20Token: Erc20Token =
         REVERSE_M_TOKEN_MAP[token["symbol"] as MToken]
 
-      return {
-        ...map,
-        [erc20Token]: {
-          dmmTokenId: token["dmm_token_id"],
-          dmmTokenSymbol: token["symbol"],
-          dmmTokenAddress: chainId === 4 ? RIKEBY_ADDRESSES[erc20Token] : token["dmm_token_address"],
-          imageUrl: token["image_url"],
-          address: TOKENS[chainId][erc20Token],
-          ...TOKEN_DETAILS[erc20Token],
-        },
+      const dmmTokenAddress = chainId === 4 ? RIKEBY_ADDRESSES[erc20Token] : token["dmm_token_address"]
+
+      if (erc20Token && dmmTokenAddress) {
+        return {
+          ...map,
+          [erc20Token]: {
+            dmmTokenId: token["dmm_token_id"],
+            dmmTokenSymbol: token["symbol"],
+            dmmTokenAddress,
+            imageUrl: token["image_url"],
+            address: TOKENS[chainId][erc20Token],
+            ...TOKEN_DETAILS[erc20Token],
+          },
+        }
+      } else {
+        return map
       }
     }, {})
-  }
-
-  static async getExchangeRate(dmmTokenId: any) {
-    const response = await fetch(
-      `${baseUrl}/v1/dmm/tokens/${dmmTokenId.toString(10)}/exchange-rate`,
-      { headers: { Accept: "application/json" } }
-    )
-    return new NumberUtil.BN((await response.json())["data"]["exchange_rate"])
   }
 
   static async getActiveSupply(dmmToken: any) {
@@ -126,6 +127,26 @@ class DmmTokenService {
     }
 
     return DmmTokenService.dmmTokenContracts[dmmTokenAddress]
+  }
+
+  static dmmControllerContract(dmmControllerAddress: string) {
+    if (!DmmTokenService.dmmControllerContracts[dmmControllerAddress]) {
+      DmmTokenService.dmmControllerContracts[dmmControllerAddress] = new DmmWeb3Service.instance.web3.eth.Contract(
+        DmmController,
+        dmmControllerAddress
+      )
+    }
+
+    return DmmTokenService.dmmControllerContracts[dmmControllerAddress]
+  }
+
+  static async getExchangeRate(dmmTokenAddress: string) {
+    await DmmWeb3Service.ready()
+
+    const dmmControllerAddress = getDmmControllerAddress()
+
+    return DmmTokenService.dmmControllerContract(dmmControllerAddress).methods
+      .getExchangeRate(dmmTokenAddress).call()
   }
 
   static async mint(dmmTokenAddress: string, owner: string, underlyingAmount: any) {

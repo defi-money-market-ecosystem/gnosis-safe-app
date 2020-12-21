@@ -24,7 +24,7 @@ const loadTokens = async (safeInfo: SafeInfo) => {
 
     const balance =
       !!token.address && !!safeInfo.safeAddress
-        ? (token.address === "0x"
+        ? (token.symbol === "ETH"
             ? ethers.utils.parseEther(safeInfo.ethBalance).toString()
             : await (
                 await ERC20TokenService.getInstance(token.address)
@@ -40,7 +40,9 @@ const loadTokens = async (safeInfo: SafeInfo) => {
         safeInfo.safeAddress
       ))
 
-    const exchangeRate = await DmmTokenService.getExchangeRate(token.dmmTokenAddress)
+    const exchangeRate = await DmmTokenService.getExchangeRate(
+      token.dmmTokenAddress
+    )
     tokens[key as Erc20Token] = { ...token, balance, exchangeRate, dmmBalance }
   }
 
@@ -54,13 +56,12 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
 
   switch (action.type) {
     case "SAFE_INFO_RECEIVED": {
-      Oracle.getEthPrice()
-        .then((price) =>
-          store.dispatch({
-            type: "SET_ETH_PRICE",
-            payload: { price: price.toString() },
-          })
-        )
+      Oracle.getEthPrice().then((price) =>
+        store.dispatch({
+          type: "SET_ETH_PRICE",
+          payload: { price: price.toString() },
+        })
+      )
 
       loadTokens(action.payload.safeInfo).then((tokens) =>
         store.dispatch({ type: "SET_TOKENS", payload: { tokens } })
@@ -108,7 +109,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
       const { tokens, safeInfo } = state
       const { token, amount } = action.payload
       const amountBn = BigNumber.from(amount)
-      const isEth = tokens[token].address === "0x"
+      const isEth = token === "ETH"
       const abi = isEth ? DmmEther : DmmToken
 
       Contract.getInstance(tokens[token].dmmTokenAddress, abi).then(
@@ -145,9 +146,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
             data,
           })
 
-          if (txs.length) {
-            gnosisSafeSdk.sendTransactions(txs)
-          }
+          gnosisSafeSdk.sendTransactions(txs)
         }
       )
       break
@@ -155,7 +154,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
     case "REDEEM": {
       const { tokens } = state
       const { token, amount } = action.payload
-      const isEth = tokens[token].address === "0x"
+      const isEth = token === "ETH"
       const abi = isEth ? DmmEther : DmmToken
 
       Contract.getInstance(tokens[token].dmmTokenAddress, abi).then(
@@ -163,11 +162,10 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
           gnosisSafeSdk.sendTransactions([
             {
               to: tokens[token].dmmTokenAddress,
-              value: isEth ? amount : 0,
-              data: instance.contract.interface.encodeFunctionData(
-                isEth ? "redeemViaEther" : "redeem",
-                isEth ? undefined : [amount]
-              ),
+              value: "0",
+              data: instance.contract.interface.encodeFunctionData("redeem", [
+                amount,
+              ]),
             },
           ])
         }

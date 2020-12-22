@@ -157,7 +157,7 @@ class DmmWeb3Service {
     if (!DmmWeb3Service.notify) {
       DmmWeb3Service.notify = Notify({
         dappId: '9171b34b-ab20-4982-b3d9-43c073657a88',
-        networkId: Number.parseInt(process.env.REACT_APP_NETWORK_ID || '4'),
+        networkId: chainId,
       });
     }
 

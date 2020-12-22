@@ -21,6 +21,7 @@ const dmmReducer: DmmReducerType = (
           DmmTokenDetailsType
         >,
         loading: false,
+        lastUpdate: Date.now()
       }
     case "SAFE_INFO_RECEIVED":
       return {

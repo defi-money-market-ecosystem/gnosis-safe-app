@@ -117,7 +117,7 @@ const Swap = ({
         color="primary"
         variant="contained"
         style={{ float: "right", marginTop: "20px" }}
-        disabled={zeroAmount || insufficientBalance || belowMinimum || loading}
+        disabled={zeroAmount || insufficientBalance || belowMinimum}
         onClick={handleButtonClick}
       >
         {actionLabel}

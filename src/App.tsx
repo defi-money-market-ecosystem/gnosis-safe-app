@@ -7,6 +7,7 @@ import dataMiddleware from "middlewares/dataMiddleware"
 import gnosisSafeSdk from "gnosisSafeSdk"
 import { useWallet } from "use-wallet"
 import {
+  reload,
   safeInfoReceived,
   safeTransactionConfirmed,
   safeTransactionRejected,
@@ -16,6 +17,8 @@ import observerMiddleware from "middlewares/observerMiddleware"
 import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
 import BalancesPanel from "components/Balances"
 import { Box } from "@material-ui/core"
+
+const REFRESH_INTERVAL = 5000
 
 const Container = styled.form`
   margin-bottom: 2rem;
@@ -34,7 +37,7 @@ const App: React.FC = () => {
     { ...initialState, wallet },
     middlewares
   )
-  const { dispatch } = contextValue
+  const { dispatch, state } = contextValue
 
   const dispatchSafeInfoReceived = useCallbackOnce((safeInfo: SafeInfo) => {
     if (!contextValue.state.safeInfo) {
@@ -52,6 +55,16 @@ const App: React.FC = () => {
 
     return () => gnosisSafeSdk.removeListeners()
   }, [dispatch, dispatchSafeInfoReceived])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!state.loading && Date.now() - state.lastUpdate >= REFRESH_INTERVAL) {
+        dispatch(reload())
+      }
+    }, REFRESH_INTERVAL)
+
+    return () => clearInterval(interval)
+  }, [dispatch, state])
 
   return (
     <Container>

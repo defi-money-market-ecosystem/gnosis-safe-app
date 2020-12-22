@@ -87,18 +87,20 @@ const BalancesPanel = ({
             <UpperLine>
               <span>Total available (USD)</span>
               <Typography>
-                ${formatNumber(totalAvailableUsd || 0, 0, 2)}
+                ${formatNumber(totalAvailableUsd || 0, 0, 2, 2)}
               </Typography>
             </UpperLine>
             <UpperLine>
               <span>Total deposited (USD)</span>
               <Typography>
-                ${formatNumber(totalDepositedUsd || 0, 0, 2)}
+                ${formatNumber(totalDepositedUsd || 0, 0, 2, 2)}
               </Typography>
             </UpperLine>
             <LowerLine>
               <span>Daily interest (USD)</span>
-              <Typography>${formatNumber(dailyInterest || 0, 0, 2)}</Typography>
+              <Typography>
+                ${formatNumber(dailyInterest || 0, 0, 2, 2)}
+              </Typography>
             </LowerLine>
           </div>
         </Box>

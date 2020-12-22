@@ -1,5 +1,6 @@
 import Web3 from "web3";
 import WalletLink from "walletlink";
+import { chainId } from "consts";
 
 class BlockNativeWalletInterfaces {
   infuraApiKey: any
@@ -38,7 +39,7 @@ class BlockNativeWalletInterfaces {
       wallet: async () => {
         const provider = this.walletLink.makeWeb3Provider(
           this.web3ProviderUrl,
-          parseInt(process.env.REACT_APP_NETWORK_ID || '4')
+          chainId
         );
         const web3 = new Web3(provider);
         let isLoadingObj: any = {

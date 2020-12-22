@@ -51,4 +51,4 @@ export const repeatUntil = (task: Function, stoppingCondition: Function, interva
   setTimeout(job, interval)
 })
 
-export const formatNumber = (number: BigSource, decimals = 0, accuracy: number | undefined) => new Big(number).times(`1e-${decimals}`).toFixed(accuracy)
+export const formatNumber = (number: BigSource, decimals = 0, accuracy: number, roundMode = 0) => new Big(number).times(`1e-${decimals}`).round(accuracy, roundMode).toFixed(accuracy)

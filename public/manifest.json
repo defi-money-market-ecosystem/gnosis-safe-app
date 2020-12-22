@@ -2,6 +2,10 @@
   "short_name": "DMM",
   "name": "DMM",
   "description": "Earn interest with DeFi Money Market (DMM) all backed by real world income generating assets viewable on-chain.",
+  "providedBy": {
+    "name": "DMM",
+    "url": "https://defimoneymarket.com"
+  },
   "iconPath": "logo.svg",
   "icons": [
     {

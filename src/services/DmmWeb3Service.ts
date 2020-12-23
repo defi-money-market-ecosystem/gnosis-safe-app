@@ -6,8 +6,6 @@ import Web3 from "web3";
 import BlockNativeWalletInterfaces from "./BlockNativeWalletInterfaces";
 import { API } from 'bnc-onboard/dist/src/interfaces';
 
-const infuraApiKey = '6016c4ab356b402ab455b2a8890efe7f';
-
 const getRandomString = () => {
   return Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 40);
 };
@@ -46,7 +44,7 @@ class DmmWeb3Service {
   onboard: API
 
   constructor() {
-    const walletInterfaces: any = new BlockNativeWalletInterfaces({infuraApiKey});
+    const walletInterfaces: any = new BlockNativeWalletInterfaces({ infuraApiKey: process.env.REACT_APP_INFURA_ID });
     this.onboard = DmmWeb3Service.onboard || Onboard({
       dappId: '9171b34b-ab20-4982-b3d9-43c073657a88',
       networkId: Number.parseInt(chainId+'' || '4'),
@@ -82,7 +80,7 @@ class DmmWeb3Service {
           },
           {
             walletName: "walletConnect",
-            infuraKey: infuraApiKey,
+            infuraKey: process.env.REACT_APP_INFURA_ID,
             preferred: true,
           },
           {

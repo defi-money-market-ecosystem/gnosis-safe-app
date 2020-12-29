@@ -1,4 +1,5 @@
 import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
+import { DmmTokenDetailsType } from "services/DMMTokenService"
 import { Erc20Token } from "types"
 
 export const safeInfoReceived = (safeInfo: SafeInfo) => ({
@@ -42,5 +43,10 @@ export const mint = (token: Erc20Token, amount: string) => ({
 export const redeem = (token: Erc20Token, amount: string) => ({
   type: "REDEEM",
   payload: { token, amount },
+})
+
+export const setTokens = (tokens: Record<Erc20Token, DmmTokenDetailsType>) => ({
+  type: "SET_TOKENS",
+  payload: { tokens },
 })
 

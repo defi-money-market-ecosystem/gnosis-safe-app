@@ -1,3 +1,4 @@
+import { setTokens } from './../actions/index'
 import { CHAIN_ID_MAP } from "consts"
 import { Erc20Token } from "types"
 import Contract from "services/Contract"
@@ -64,7 +65,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
       )
 
       loadTokens(action.payload.safeInfo).then((tokens) =>
-        store.dispatch({ type: "SET_TOKENS", payload: { tokens } })
+        store.dispatch(setTokens(tokens))
       )
       const { wallet } = state
 
@@ -101,7 +102,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
     case "RELOAD": {
       const { safeInfo } = state
       loadTokens(safeInfo).then((tokens) =>
-        store.dispatch({ type: "SET_TOKENS", payload: { tokens } })
+        store.dispatch(setTokens(tokens))
       )
       break
     }

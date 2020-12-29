@@ -26,7 +26,7 @@ const loadTokens = async (safeInfo: SafeInfo) => {
     const balance =
       !!token.address && !!safeInfo.safeAddress
         ? (token.symbol === "ETH"
-            ? ethers.utils.parseEther(safeInfo.ethBalance).toString()
+            ? await ethers.getDefaultProvider(safeInfo.network).getBalance(safeInfo.safeAddress)
             : await (
                 await ERC20TokenService.getInstance(token.address)
               ).balanceOf(safeInfo.safeAddress)
@@ -82,7 +82,13 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
 
       repeatUntil(
         async () =>
-          await gnosisSafeSdk.txs.getBySafeTxHash(action.payload.safeTxHash),
+          {
+            try {
+              return await gnosisSafeSdk.txs.getBySafeTxHash(action.payload.safeTxHash)
+            } catch {
+              return {}
+            }
+          },
         (tx: any) => !!tx.transactionHash,
         5000
       )

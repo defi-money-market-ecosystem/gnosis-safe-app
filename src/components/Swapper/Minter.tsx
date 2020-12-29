@@ -26,7 +26,7 @@ export default connect<SwapPropsType>(
     decimals: tokens?.[selectedToken]?.decimals || 18,
     minAmount: `1e${tokens?.[selectedToken]?.decimals || 18}`,
     description: "Mint your tokens into mTokens so it can earn interest.",
-    actionLabel: "Mint",
+    actionLabel: "Unlock & Mint",
   }),
   (dispatch, { selectedToken: token }) => ({
     reload: () => dispatch(reload()),

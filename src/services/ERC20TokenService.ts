@@ -51,6 +51,10 @@ class ERC20TokenService {
     await this.ready()
     return this.contract.balanceOf(address)
   }
+
+  encode(method: string, params: any[]) {
+    return this.contract.interface.encodeFunctionData(method, params)
+  }
 }
 
 export default ERC20TokenService;

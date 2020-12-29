@@ -117,7 +117,9 @@ const Swap = ({
         color="primary"
         variant="contained"
         style={{ float: "right", marginTop: "20px" }}
-        disabled={zeroAmount || insufficientBalance || belowMinimum}
+        disabled={
+          zeroAmount || insufficientBalance || belowMinimum || extraDecimals
+        }
         onClick={handleButtonClick}
       >
         {actionLabel}

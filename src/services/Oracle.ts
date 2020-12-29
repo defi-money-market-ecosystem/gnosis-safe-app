@@ -34,7 +34,7 @@ class Oracle {
   }
 
   static getEthPrice = async (): Promise<BigNumber> => {
-    return (await Oracle.getInstance()).contract.latestAnswer()
+    return (await (await Oracle.getInstance()).contract.latestRoundData()).answer
   }
 }
 

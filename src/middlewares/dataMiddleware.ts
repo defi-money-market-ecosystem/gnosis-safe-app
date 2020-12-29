@@ -1,3 +1,4 @@
+import { setTokens } from './../actions/index'
 import { CHAIN_ID_MAP } from "consts"
 import { Erc20Token } from "types"
 import Contract from "services/Contract"
@@ -14,6 +15,8 @@ import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
 import { reload, transactionConfirmed, transactionFailed } from "actions"
 import Oracle from "services/Oracle"
 
+const REPEAT_INTERVAL = (Number(process.env.REACT_APP_TRANSACTION_WAIT_INTERVAL) || 5) * 1000
+
 const loadTokens = async (safeInfo: SafeInfo) => {
   const tokens = await DmmTokenService.getDmmTokens(
     CHAIN_ID_MAP[safeInfo.network]
@@ -25,7 +28,7 @@ const loadTokens = async (safeInfo: SafeInfo) => {
     const balance =
       !!token.address && !!safeInfo.safeAddress
         ? (token.symbol === "ETH"
-            ? ethers.utils.parseEther(safeInfo.ethBalance).toString()
+            ? await ethers.getDefaultProvider(safeInfo.network).getBalance(safeInfo.safeAddress)
             : await (
                 await ERC20TokenService.getInstance(token.address)
               ).balanceOf(safeInfo.safeAddress)
@@ -64,7 +67,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
       )
 
       loadTokens(action.payload.safeInfo).then((tokens) =>
-        store.dispatch({ type: "SET_TOKENS", payload: { tokens } })
+        store.dispatch(setTokens(tokens))
       )
       const { wallet } = state
 
@@ -81,9 +84,15 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
 
       repeatUntil(
         async () =>
-          await gnosisSafeSdk.txs.getBySafeTxHash(action.payload.safeTxHash),
+          {
+            try {
+              return await gnosisSafeSdk.txs.getBySafeTxHash(action.payload.safeTxHash)
+            } catch {
+              return {}
+            }
+          },
         (tx: any) => !!tx.transactionHash,
-        5000
+        REPEAT_INTERVAL
       )
         .then((tx: any) => {
           ethers
@@ -101,7 +110,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
     case "RELOAD": {
       const { safeInfo } = state
       loadTokens(safeInfo).then((tokens) =>
-        store.dispatch({ type: "SET_TOKENS", payload: { tokens } })
+        store.dispatch(setTokens(tokens))
       )
       break
     }

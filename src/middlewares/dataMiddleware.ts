@@ -1,4 +1,4 @@
-import { setTokens } from './../actions/index'
+import { setTokens } from "./../actions/index"
 import { CHAIN_ID_MAP } from "consts"
 import { Erc20Token } from "types"
 import Contract from "services/Contract"
@@ -14,8 +14,10 @@ import ERC20TokenService from "services/ERC20TokenService"
 import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
 import { reload, transactionConfirmed, transactionFailed } from "actions"
 import Oracle from "services/Oracle"
+import DmmWeb3Service from "services/DmmWeb3Service"
 
-const REPEAT_INTERVAL = (Number(process.env.REACT_APP_TRANSACTION_WAIT_INTERVAL) || 5) * 1000
+const REPEAT_INTERVAL =
+  (Number(process.env.REACT_APP_TRANSACTION_WAIT_INTERVAL) || 5) * 1000
 
 const loadTokens = async (safeInfo: SafeInfo) => {
   const tokens = await DmmTokenService.getDmmTokens(
@@ -25,28 +27,27 @@ const loadTokens = async (safeInfo: SafeInfo) => {
   for (const key in tokens) {
     const token = tokens[key as Erc20Token]
 
-    const balance =
-      !!token.address && !!safeInfo.safeAddress
-        ? (token.symbol === "ETH"
-            ? await ethers.getDefaultProvider(safeInfo.network).getBalance(safeInfo.safeAddress)
-            : await (
-                await ERC20TokenService.getInstance(token.address)
-              ).balanceOf(safeInfo.safeAddress)
-          ).toString()
-        : "0"
+    const isEth = token.symbol === "ETH"
 
-    const dmmBalance =
-      !!token.dmmTokenAddress &&
-      !!safeInfo.safeAddress &&
-      (await DmmTokenService.balanceOf(
-        token.dmmTokenAddress,
-        safeInfo.safeAddress
-      ))
+    const tokenContract = await ERC20TokenService.getInstance(token.address)
 
-    const exchangeRate = await DmmTokenService.getExchangeRate(
-      token.dmmTokenAddress
-    )
-    tokens[key as Erc20Token] = { ...token, balance, exchangeRate, dmmBalance }
+    await DmmWeb3Service.ready()
+
+    const [balance, dmmBalance, exchangeRate] = await Promise.all([
+      isEth
+        ? ethers
+            .getDefaultProvider(safeInfo.network)
+            .getBalance(safeInfo.safeAddress)
+        : tokenContract.balanceOf(safeInfo.safeAddress),
+      DmmTokenService.balanceOf(token.dmmTokenAddress, safeInfo.safeAddress),
+      DmmTokenService.getExchangeRate(token.dmmTokenAddress),
+    ])
+    tokens[key as Erc20Token] = {
+      ...token,
+      balance: balance.toString(),
+      exchangeRate,
+      dmmBalance,
+    }
   }
 
   return tokens
@@ -83,14 +84,15 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
       const { safeInfo } = state
 
       repeatUntil(
-        async () =>
-          {
-            try {
-              return await gnosisSafeSdk.txs.getBySafeTxHash(action.payload.safeTxHash)
-            } catch {
-              return {}
-            }
-          },
+        async () => {
+          try {
+            return await gnosisSafeSdk.txs.getBySafeTxHash(
+              action.payload.safeTxHash
+            )
+          } catch {
+            return {}
+          }
+        },
         (tx: any) => !!tx.transactionHash,
         REPEAT_INTERVAL
       )
@@ -109,13 +111,11 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
     }
     case "RELOAD": {
       const { safeInfo } = state
-      loadTokens(safeInfo).then((tokens) =>
-        store.dispatch(setTokens(tokens))
-      )
+      loadTokens(safeInfo).then((tokens) => store.dispatch(setTokens(tokens)))
       break
     }
     case "MINT": {
-      const { tokens, safeInfo } = state
+      const { tokens } = state
       const { token, amount } = action.payload
       const amountBn = BigNumber.from(amount)
       const isEth = token === "ETH"
@@ -125,24 +125,18 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
         async (instance) => {
           const txs = []
           if (!isEth) {
-            const erc20TokenContract = (
-              await ERC20TokenService.getInstance(tokens[token].address)
-            ).contract
-            const allowance = await erc20TokenContract.allowance(
-              safeInfo.safeAddress.toLocaleLowerCase(),
-              tokens[token].dmmTokenAddress.toLocaleLowerCase()
+            const tokenContract = await ERC20TokenService.getInstance(
+              tokens[token].address
             )
 
-            if (!allowance.gte(amountBn)) {
-              txs.push({
-                to: tokens[token].address,
-                value: "0",
-                data: erc20TokenContract.interface.encodeFunctionData(
-                  "approve",
-                  [tokens[token].dmmTokenAddress, amountBn]
-                ),
-              })
-            }
+            txs.push({
+              to: tokens[token].address,
+              value: "0",
+              data: tokenContract.encode("approve", [
+                tokens[token].dmmTokenAddress,
+                amountBn,
+              ]),
+            })
           }
 
           const data = isEth

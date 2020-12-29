@@ -18,7 +18,8 @@ import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
 import BalancesPanel from "components/Balances"
 import { Box } from "@material-ui/core"
 
-const REFRESH_INTERVAL = 5000
+const REFRESH_INTERVAL =
+  (Number(process.env.REACT_APP_REFRESH_INTERVAL) || 15) * 1000
 
 const Container = styled.form`
   margin-bottom: 2rem;

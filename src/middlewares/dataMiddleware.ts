@@ -15,6 +15,8 @@ import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
 import { reload, transactionConfirmed, transactionFailed } from "actions"
 import Oracle from "services/Oracle"
 
+const REPEAT_INTERVAL = (Number(process.env.REACT_APP_TRANSACTION_WAIT_INTERVAL) || 5) * 1000
+
 const loadTokens = async (safeInfo: SafeInfo) => {
   const tokens = await DmmTokenService.getDmmTokens(
     CHAIN_ID_MAP[safeInfo.network]
@@ -90,7 +92,7 @@ const dataMiddleware = (store: any) => (next: Dispatch<Action>) => (
             }
           },
         (tx: any) => !!tx.transactionHash,
-        5000
+        REPEAT_INTERVAL
       )
         .then((tx: any) => {
           ethers

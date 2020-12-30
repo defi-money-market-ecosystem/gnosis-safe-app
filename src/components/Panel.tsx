@@ -1,7 +1,6 @@
 import styled from "styled-components"
 
 const Panel = styled.div`
-  width: 500px;
   margin: ${(props: any) => props.theme.spacing(2)}rem;
   padding: ${(props: any) => props.theme.spacing(2)}rem;
   box-shadow: rgba(0, 0, 0, 0.5) 1px 1px 8px -4px,

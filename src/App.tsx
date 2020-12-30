@@ -16,7 +16,7 @@ import useCallbackOnce from "hooks/useCallbackOnce"
 import observerMiddleware from "middlewares/observerMiddleware"
 import { SafeInfo } from "@gnosis.pm/safe-apps-sdk"
 import BalancesPanel from "components/Balances"
-import { Box } from "@material-ui/core"
+import Grid from "@material-ui/core/Grid"
 
 const REFRESH_INTERVAL =
   (Number(process.env.REACT_APP_REFRESH_INTERVAL) || 15) * 1000
@@ -70,10 +70,14 @@ const App: React.FC = () => {
   return (
     <Container>
       <DmmContext.Provider value={contextValue}>
-        <Box display="flex">
-          <SwapPanel />
-          <BalancesPanel />
-        </Box>
+        <Grid container spacing={10}>
+          <Grid item md={6} xs={12}>
+            <SwapPanel />
+          </Grid>
+          <Grid item md={6} xs={12}>
+            <BalancesPanel />
+          </Grid>
+        </Grid>
       </DmmContext.Provider>
     </Container>
   )

@@ -89,7 +89,7 @@ const Swap = ({
   const handleButtonClick = () => action(amount)
 
   return (
-    <Box>
+    <Box overflow="hidden">
       <HelperText
         align="center"
         display="block"

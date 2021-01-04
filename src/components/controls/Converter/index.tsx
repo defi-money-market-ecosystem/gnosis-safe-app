@@ -10,11 +10,14 @@ const convert = (
   exchangeRate: BigSource = 1,
   decimals: number = 0,
   reverse = false
-) =>
-  new Big(amount || 0)
+) => {
+  const roundTo = DECIMAL_PLACES < decimals ? DECIMAL_PLACES - decimals : 0
+
+  return new Big(amount || 0)
     [reverse ? "times" : "div"](exchangeRate)
-    .round(-Math.abs(DECIMAL_PLACES - decimals), reverse ? 3 : 0)
+    .round(roundTo, reverse ? 3 : 0)
     .toFixed()
+}
 
 interface ConverterPropsType {
   tokens: Array<string>

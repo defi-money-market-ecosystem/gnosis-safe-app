@@ -1,5 +1,5 @@
 import Big, { BigSource } from "big.js"
-import { NETWORK_MAP, TOKENS, TOKEN_DETAILS, chainId } from "consts"
+import { DECIMAL_PLACES, NETWORK_MAP, TOKENS, TOKEN_DETAILS, chainId } from "consts"
 import { Erc20Token, ChainID } from "types"
 
 export const getInfuraUrl = (network: string) =>
@@ -50,5 +50,19 @@ export const repeatUntil = (task: Function, stoppingCondition: Function, interva
 
   setTimeout(job, interval)
 })
+
+export const convert = (
+  amount: BigSource = 0,
+  exchangeRate: BigSource = 1,
+  decimals: number = 0,
+  reverse = false
+) => {
+
+  const roundTo = DECIMAL_PLACES < decimals ? DECIMAL_PLACES - decimals : 0
+
+  return new Big(amount || 0)
+    [reverse ? "times" : "div"](exchangeRate)
+    .round(roundTo, reverse ? 3 : 0)
+}
 
 export const formatNumber = (number: BigSource, decimals = 0, accuracy: number, roundMode = 0) => new Big(number).times(`1e-${decimals}`).round(accuracy, roundMode).toFixed(accuracy)

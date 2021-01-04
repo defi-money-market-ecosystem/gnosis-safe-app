@@ -2,22 +2,8 @@ import React from "react"
 import { Box, useTheme } from "@material-ui/core"
 import AmountInput from "components/controls/AmountInput"
 import ArrowForward from "@material-ui/icons/ArrowForward"
-import Big, { BigSource } from "big.js"
-import { DECIMAL_PLACES } from "consts"
-
-const convert = (
-  amount: BigSource = 0,
-  exchangeRate: BigSource = 1,
-  decimals: number = 0,
-  reverse = false
-) => {
-  const roundTo = DECIMAL_PLACES < decimals ? DECIMAL_PLACES - decimals : 0
-
-  return new Big(amount || 0)
-    [reverse ? "times" : "div"](exchangeRate)
-    .round(roundTo, reverse ? 3 : 0)
-    .toFixed()
-}
+import Big from "big.js"
+import { convert } from "utils"
 
 interface ConverterPropsType {
   tokens: Array<string>
@@ -46,12 +32,12 @@ const Converter = (props: ConverterPropsType) => {
     onMaxButtonClick,
   } = props
 
-  const rightAmount = convert(leftValue, exchangeRate, decimals)
+  const rightAmount = convert(leftValue, exchangeRate, decimals).toFixed()
 
   const handleLeftAmountChange = (value: string = "0") =>
     onAmountChange({
       left: value,
-      right: convert(value, exchangeRate, decimals),
+      right: convert(value, exchangeRate, decimals).toFixed(),
     })
 
   const handleRightAmountChange = (value: string) => {
@@ -60,7 +46,7 @@ const Converter = (props: ConverterPropsType) => {
     }
 
     onAmountChange({
-      left: convert(value, exchangeRate, decimals, true),
+      left: convert(value, exchangeRate, decimals, true).toFixed(),
       right: value,
     })
   }

@@ -4,11 +4,11 @@ import { Erc20Token, MToken } from "types"
 import { connect } from "DmmContext"
 import Panel from "components/Panel"
 import Big from "big.js"
-import { formatNumber } from "utils"
+import { convert, formatNumber } from "utils"
 import NumberUtil from "utils/NumberUtil"
 import styled from "styled-components"
 import StyledTabs, { StyledTab } from "components/Tabs"
-import { interestPerSecond } from "consts"
+import { DECIMAL_PLACES, interestPerSecond } from "consts"
 
 const UpperLine = styled.div`
   width: 100%;
@@ -28,6 +28,7 @@ const LowerLine = styled.div`
 `
 interface Balance {
   token: Erc20Token
+  accuracy: number
   dmmToken: MToken
   balance: string
   dmmBalance: string
@@ -61,21 +62,31 @@ const BalancesPanel = ({
       <Typography component="div" variant="body1" color="textPrimary">
         <Box m={40} fontWeight={100}>
           {balances.map(
-            ({ token, dmmToken, balance, dmmBalance, convertedDmmBalance }) => {
+            ({
+              token,
+              accuracy,
+              dmmToken,
+              balance,
+              dmmBalance,
+              convertedDmmBalance,
+            }) => {
               return (
                 <div key={token}>
                   <UpperLine>
                     <span>{token}</span>
-                    <Typography>{formatNumber(balance || 0, 0, 8)}</Typography>
+                    <Typography>
+                      {formatNumber(balance || 0, 0, accuracy)}
+                    </Typography>
                   </UpperLine>
                   <LowerLine>
                     <span>{dmmToken}</span>
                     <div>
                       <Typography component="span">
-                        {formatNumber(dmmBalance || 0, 0, 8)}
+                        {formatNumber(dmmBalance || 0, 0, accuracy)}
                       </Typography>{" "}
                       <Typography component="span" color="textSecondary">
-                        ({formatNumber(convertedDmmBalance || 0, 0, 8)} {token})
+                        ({formatNumber(convertedDmmBalance || 0, 0, accuracy)}{" "}
+                        {token})
                       </Typography>
                     </div>
                   </LowerLine>
@@ -123,15 +134,23 @@ export default connect<BalancesPanelPropsType>(
 
       const bigDmmBalance = new Big(dmmBalance || 0).times(`1e-${decimals}`)
 
+      const roundTo = DECIMAL_PLACES < decimals ? DECIMAL_PLACES - decimals : 0
+
+      const convertedDmmBalance = convert(
+        new Big(dmmBalance).round(roundTo, 0),
+        new Big(NumberUtil._1).div(exchangeRate || 1),
+        decimals
+      )
+        .times(`1e-${decimals}`)
+        .toFixed()
+
       return {
         token: key,
+        accuracy: Math.min(decimals, 8),
         dmmToken: dmmTokenSymbol,
         balance: new Big(balance || 0).times(`1e-${decimals}`).toFixed(),
         dmmBalance: bigDmmBalance.toFixed(),
-        convertedDmmBalance: bigDmmBalance
-          .times(exchangeRate || 1)
-          .div(NumberUtil._1)
-          .toFixed(),
+        convertedDmmBalance,
       }
     })
 

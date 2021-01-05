@@ -9,7 +9,7 @@ import {
   styled,
   Typography,
 } from "@material-ui/core"
-import { numberRegex } from "utils"
+import { hasLeadingZeros } from "utils"
 
 const TokenSelect = styled(Select)({
   flexBasis: "100px",
@@ -96,10 +96,14 @@ const AmountInput = (props: AmountInputProps) => {
             inputProps={{
               ...props,
               onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
-                const { value } = event.currentTarget
-                if (value === "" || numberRegex.test(value)) {
-                  props.onChange?.(event)
+                if (event.currentTarget.value === ".") {
+                  event.currentTarget.value = "0."
+                } else if (hasLeadingZeros.test(event.currentTarget.value)) {
+                  event.currentTarget.value =
+                    event.currentTarget.value.replace(/^0+/, "") || "0"
                 }
+
+                props.onChange?.(event)
               },
             }}
             disabled={disabled}

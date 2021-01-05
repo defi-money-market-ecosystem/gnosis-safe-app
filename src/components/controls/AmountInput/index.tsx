@@ -9,6 +9,7 @@ import {
   styled,
   Typography,
 } from "@material-ui/core"
+import { numberRegex } from "utils"
 
 const TokenSelect = styled(Select)({
   flexBasis: "100px",
@@ -92,7 +93,15 @@ const AmountInput = (props: AmountInputProps) => {
         {...inputProps}
         renderInput={(props: React.HTMLProps<HTMLInputElement>) => (
           <StyledInput
-            inputProps={props}
+            inputProps={{
+              ...props,
+              onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+                const { value } = event.currentTarget
+                if (value === "" || numberRegex.test(value)) {
+                  props.onChange?.(event)
+                }
+              },
+            }}
             disabled={disabled}
             disableUnderline
             endAdornment={

@@ -67,4 +67,4 @@ export const convert = (
 
 export const formatNumber = (number: BigSource, decimals = 0, accuracy: number, roundMode = 0) => new Big(number).times(`1e-${decimals}`).round(accuracy, roundMode).toFixed(accuracy)
 
-export const numberRegex = /^[1-9]*\d(\.\d*)?$/;
+export const hasLeadingZeros = /^0+\d+(\.\d*)?$/

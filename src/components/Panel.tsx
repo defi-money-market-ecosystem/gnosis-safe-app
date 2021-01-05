@@ -6,6 +6,8 @@ const Panel = styled.div`
   box-shadow: rgba(0, 0, 0, 0.5) 1px 1px 8px -4px,
     rgba(0, 0, 0, 0.5) 1px 1px 4px -4px;
   border-radius: 5px;
+
+  background: white;
 `
 
 export default Panel

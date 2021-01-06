@@ -9,7 +9,7 @@ import {
   styled,
   Typography,
 } from "@material-ui/core"
-import { hasLeadingZeros } from "utils"
+import { hasLeadingZeros, hasTrailingZeros } from "utils"
 
 const TokenSelect = styled(Select)({
   flexBasis: "100px",
@@ -104,6 +104,10 @@ const AmountInput = (props: AmountInputProps) => {
                 } else if (hasLeadingZeros.test(event.currentTarget.value)) {
                   event.currentTarget.value =
                     event.currentTarget.value.replace(/^0+/, "") || "0"
+                } else if (hasTrailingZeros.test(event.currentTarget.value)) {
+                  event.currentTarget.value =
+                    event.currentTarget.value.replace(hasTrailingZeros, "$1") ||
+                    "0"
                 }
 
                 props.onChange?.(event)

@@ -8,6 +8,7 @@ const Panel = styled.div`
   border-radius: 5px;
 
   background: white;
+  overflow: hidden;
 `
 
 export default Panel

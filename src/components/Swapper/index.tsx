@@ -116,7 +116,7 @@ const Swap = ({
       <Button
         color="primary"
         variant="contained"
-        style={{ float: "right", marginTop: "20px" }}
+        style={{ float: "right" }}
         disabled={
           zeroAmount || insufficientBalance || belowMinimum || extraDecimals
         }

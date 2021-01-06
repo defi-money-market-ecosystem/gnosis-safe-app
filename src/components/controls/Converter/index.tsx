@@ -1,9 +1,10 @@
 import React from "react"
-import { Box, useTheme } from "@material-ui/core"
+import { Box, Hidden, makeStyles, Theme } from "@material-ui/core"
 import AmountInput from "components/controls/AmountInput"
 import ArrowForward from "@material-ui/icons/ArrowForward"
 import Big from "big.js"
 import { convert } from "utils"
+import { ArrowDownward } from "@material-ui/icons"
 
 interface ConverterPropsType {
   tokens: Array<string>
@@ -18,8 +19,28 @@ interface ConverterPropsType {
   onMaxButtonClick: () => void
 }
 
+const useStyles = makeStyles((theme: Theme) => ({
+  root: {
+    [theme.breakpoints.up("sm")]: {
+      display: "flex",
+      justifyContent: "stretch",
+      alignItems: "flex-end",
+    },
+    overflow: "hidden",
+  },
+  input: {
+    flexGrow: 1,
+  },
+  arrow: {
+    display: "block",
+    margin: `${theme.spacing(24)}px auto`,
+    padding: `0 ${theme.spacing(24)}px`,
+    color: theme.palette.text.primary,
+  },
+}))
+
 const Converter = (props: ConverterPropsType) => {
-  const theme = useTheme()
+  const classes = useStyles()
 
   const {
     tokens,
@@ -52,7 +73,7 @@ const Converter = (props: ConverterPropsType) => {
   }
 
   return (
-    <Box display="flex" alignItems="flex-end">
+    <Box className={classes.root}>
       <AmountInput
         tokens={tokens}
         selectedToken={tokenPair?.[0] || "ETH"}
@@ -63,11 +84,14 @@ const Converter = (props: ConverterPropsType) => {
         onMaxButtonClick={onMaxButtonClick}
         fixedToken={!tokens.length}
         disabled={!tokens.length || !tokenPair?.[0]}
+        className={classes.input}
       />
-      <ArrowForward
-        style={{ margin: "12px", color: theme.palette.text.primary }}
-        color="primary"
-      />
+      <Hidden xsDown>
+        <ArrowForward className={classes.arrow} />
+      </Hidden>
+      <Hidden smUp>
+        <ArrowDownward className={classes.arrow} color="primary" />
+      </Hidden>
       <AmountInput
         selectedToken={tokenPair[1]}
         fixedToken
@@ -75,6 +99,7 @@ const Converter = (props: ConverterPropsType) => {
         value={rightAmount}
         onChange={handleRightAmountChange}
         disabled={!tokens.length || !tokenPair?.[1]}
+        className={classes.input}
       />
     </Box>
   )

@@ -20,7 +20,7 @@ const SwapPanel = () => {
   const TabPanel = tabData[activeTab].tab || "div"
 
   return (
-    <Panel style={{ maxHeight: 285 }}>
+    <Panel>
       <StyledTabs
         value={activeTab}
         onChange={(e: React.ChangeEvent<{}>, newSelectedIndex: any) =>

@@ -68,3 +68,5 @@ export const convert = (
 export const formatNumber = (number: BigSource, decimals = 0, accuracy: number, roundMode = 0) => new Big(number).times(`1e-${decimals}`).round(accuracy, roundMode).toFixed(accuracy)
 
 export const hasLeadingZeros = /^0+\d+(\.\d*)?$/
+
+export const hasTrailingZeros = /^(\d+(\.(?=\d{9,}$))\d*)(0+)$/

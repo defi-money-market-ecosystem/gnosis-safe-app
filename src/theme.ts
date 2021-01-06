@@ -21,7 +21,8 @@ const theme = createMuiTheme({
     },
     action: {
       disabledBackground: 'rgba(50,124,203,.3)'
-    }
+    },
+    divider: '#e2e2e2'
   },
   typography: {
     fontFamily: [

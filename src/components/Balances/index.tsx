@@ -1,5 +1,10 @@
 import React from "react"
-import { Box, CircularProgress, Typography } from "@material-ui/core"
+import {
+  Box,
+  CircularProgress,
+  Typography,
+  TypographyProps,
+} from "@material-ui/core"
 import { Erc20Token, MToken } from "types"
 import { connect } from "DmmContext"
 import Panel from "components/Panel"
@@ -10,22 +15,44 @@ import styled from "styled-components"
 import StyledTabs, { StyledTab } from "components/Tabs"
 import { DECIMAL_PLACES, interestPerSecond } from "consts"
 
-const UpperLine = styled.div`
+const typographyHOC = (props: TypographyProps<"div">) => (
+  typographyProps: TypographyProps<"div">
+) => (
+  <Typography component="div" variant="body1" {...typographyProps} {...props} />
+)
+
+const BalanceRow = styled.div`
   width: 100%;
-  border-bottom: 1px solid #e2e2e2;
+  border-bottom: 1px solid ${(props) => props.theme.palette.divider};
   display: flex;
   justify-content: space-between;
-  padding-bottom: 6px;
-  margin-bottom: 6px;
+  padding-bottom: ${(props) => props.theme.spacing(12)}px;
+  margin-bottom: ${(props) => props.theme.spacing(12)}px;
+
+  &:last-of-type {
+    border: none;
+  }
 `
 
-const LowerLine = styled.div`
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding-bottom: 6px;
-  margin-bottom: 6px;
+const Asset = styled(typographyHOC({ color: "textPrimary" }))`
+  width: fit-content;
+  font-size: ${(props) => props.theme.spacing(32)}px;
+  font-weight: 100;
 `
+
+const Amount = styled(typographyHOC({ color: "textPrimary" }))`
+  font-weight: 400;
+  text-align: right;
+  width: 70%;
+  font-size: ${(props) => props.theme.spacing(32)}px;
+`
+
+const Underlying = styled(typographyHOC({ color: "textSecondary" }))`
+  ${(props) => props.theme.breakpoints.up("sm")} {
+    display: inline;
+  }
+`
+
 interface Balance {
   token: Erc20Token
   accuracy: number
@@ -59,63 +86,51 @@ const BalancesPanel = ({
           disabled
         />
       </StyledTabs>
-      <Typography component="div" variant="body1" color="textPrimary">
-        <Box m={40} fontWeight={100}>
-          {balances.map(
-            ({
-              token,
-              accuracy,
-              dmmToken,
-              balance,
-              dmmBalance,
-              convertedDmmBalance,
-            }) => {
-              return (
-                <div key={token}>
-                  <UpperLine>
-                    <span>{token}</span>
-                    <Typography>
-                      {formatNumber(balance || 0, 0, accuracy)}
-                    </Typography>
-                  </UpperLine>
-                  <LowerLine>
-                    <span>{dmmToken}</span>
-                    <div>
-                      <Typography component="span">
-                        {formatNumber(dmmBalance || 0, 0, accuracy)}
-                      </Typography>{" "}
-                      <Typography component="span" color="textSecondary">
-                        ({formatNumber(convertedDmmBalance || 0, 0, accuracy)}{" "}
-                        {token})
-                      </Typography>
-                    </div>
-                  </LowerLine>
-                </div>
-              )
-            }
-          )}
-          <div>
-            <UpperLine>
-              <span>Total available (USD)</span>
-              <Typography>
-                ${formatNumber(totalAvailableUsd || 0, 0, 2, 2)}
-              </Typography>
-            </UpperLine>
-            <UpperLine>
-              <span>Total deposited (USD)</span>
-              <Typography>
-                ${formatNumber(totalDepositedUsd || 0, 0, 2, 2)}
-              </Typography>
-            </UpperLine>
-            <LowerLine>
-              <span>Daily interest (USD)</span>
-              <Typography>
-                ${formatNumber(dailyInterest || 0, 0, 2, 2)}
-              </Typography>
-            </LowerLine>
-          </div>
-        </Box>
-      </Typography>
+      <Box m={40} overflow="hidden">
+        {balances.map(
+          ({
+            token,
+            accuracy,
+            dmmToken,
+            balance,
+            dmmBalance,
+            convertedDmmBalance,
+          }) => (
+            <div key={token}>
+              <BalanceRow>
+                <Asset>{token}</Asset>
+                <Amount>{formatNumber(balance || 0, 0, accuracy)}</Amount>
+              </BalanceRow>
+              <BalanceRow>
+                <Asset>{dmmToken}</Asset>
+                <Amount>
+                  <Typography component="span">
+                    {formatNumber(dmmBalance || 0, 0, accuracy)}
+                  </Typography>{" "}
+                  <Underlying>
+                    ({formatNumber(convertedDmmBalance || 0, 0, accuracy)}{" "}
+                    {token})
+                  </Underlying>
+                </Amount>
+              </BalanceRow>
+            </div>
+          )
+        )}
+        <div>
+          <BalanceRow>
+            <Asset>Total available (USD)</Asset>
+            <Amount>${formatNumber(totalAvailableUsd || 0, 0, 2, 2)}</Amount>
+          </BalanceRow>
+          <BalanceRow>
+            <Asset>Total deposited (USD)</Asset>
+            <Amount>${formatNumber(totalDepositedUsd || 0, 0, 2, 2)}</Amount>
+          </BalanceRow>
+          <BalanceRow>
+            <Asset>Daily interest (USD)</Asset>
+            <Amount>${formatNumber(dailyInterest || 0, 0, 2, 2)}</Amount>
+          </BalanceRow>
+        </div>
+      </Box>
     </Panel>
   )
 }

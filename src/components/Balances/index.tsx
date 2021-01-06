@@ -43,7 +43,7 @@ const Asset = styled(typographyHOC({ color: "textPrimary" }))`
 const Amount = styled(typographyHOC({ color: "textPrimary" }))`
   font-weight: 400;
   text-align: right;
-  width: 70%;
+  width: fit-content;
   font-size: ${(props) => props.theme.spacing(32)}px;
 `
 

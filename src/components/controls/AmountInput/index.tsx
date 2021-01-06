@@ -36,6 +36,7 @@ const StyledTypography = styled(Typography)({
   padding: "10px 20px 10px 10px",
   height: "40px",
   boxSizing: "border-box",
+  fontWeight: 100,
 })
 
 const defaultTokens = ["ETH", "DAI"]
@@ -57,6 +58,7 @@ export interface AmountInputProps
     | undefined
   onMaxButtonClick?: (event: React.MouseEvent<any, MouseEvent>) => void
   disabled?: boolean
+  className?: string
 }
 
 const AmountInput = (props: AmountInputProps) => {
@@ -68,11 +70,12 @@ const AmountInput = (props: AmountInputProps) => {
     onMaxButtonClick,
     onChange = () => {},
     disabled = false,
+    className,
     ...inputProps
   } = props
 
   return (
-    <Box>
+    <Box className={className}>
       {!!onMaxButtonClick && (
         <div>
           <Link
